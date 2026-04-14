@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://ddxc2u1pwbh8j"]
+
+[ext_resource type="Script" uid="uid://bm8r8mcyepk04" path="res://main.gd" id="1_ig7tw"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_ig7tw"]
+font_size = 45
+font_color = Color(1, 0.9882353, 1, 1)
+outline_size = 3
+outline_color = Color(0.19315353, 0.19315353, 0.19315353, 1)
+shadow_size = 3
+shadow_color = Color(0, 0, 0, 0.023529412)
+shadow_offset = Vector2(2, 2)
+
+[node name="Main" type="Node2D" unique_id=690814753]
+script = ExtResource("1_ig7tw")
+
+[node name="DrawLine" type="Line2D" parent="." unique_id=1997235067]
+z_index = 10
+points = PackedVector2Array(300, 55)
+default_color = Color(1, 0, 0, 1)
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
+
+[node name="SelectionBox" type="ColorRect" parent="." unique_id=1341090061]
+z_index = 10
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(1, 1, 0.46666667, 0.39215687)
+
+[node name="SumLabel" type="Label" parent="SelectionBox" unique_id=440104252]
+layout_mode = 1
+offset_left = -30.0
+offset_right = 10.0
+offset_bottom = 69.0
+text = "0"
+label_settings = SubResource("LabelSettings_ig7tw")

@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://dh7v0e7o0bvuw"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_po0nb"]
+bg_color = Color(0.18837145, 0.18837145, 0.18837139, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[node name="Background" type="Panel" unique_id=1702909066]
+offset_left = -50.0
+offset_top = -50.0
+offset_right = 50.0
+offset_bottom = 50.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_po0nb")
