@@ -55,7 +55,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0, 0, 0, 0.5882353)
+color = Color(0, 0, 0, 0.94)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="PauseMenuLayer" unique_id=452359642]
 anchors_preset = 8
@@ -88,7 +88,7 @@ text = "Restart"
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
-text = "Quit"
+text = "Leave"
 
 [node name="PauseButton" type="Button" parent="." unique_id=1633161824]
 offset_left = 678.0

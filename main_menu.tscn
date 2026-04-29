@@ -86,7 +86,17 @@ theme_override_styles/pressed = ExtResource("1_06t4h")
 theme_override_styles/hover = ExtResource("1_06t4h")
 text = "Mutation"
 
+[node name="BtnQuit" type="Button" parent="MarginContainer/MainLayout/Buttons" unique_id=2001234567]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_06t4h")
+theme_override_styles/pressed = ExtResource("1_06t4h")
+theme_override_styles/hover = ExtResource("1_06t4h")
+text = "Quit"
+
 [connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnClassic" to="." method="_on_btn_classic_pressed"]
 [connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnZen" to="." method="_on_btn_zen_pressed"]
 [connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnGravity" to="." method="_on_btn_gravity_pressed"]
 [connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnMutation" to="." method="_on_btn_mutation_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnQuit" to="." method="_on_btn_quit_pressed"]

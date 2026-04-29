@@ -1,6 +1,5 @@
 extends Node2D
 
-var tile_scene = preload("res://tile.tscn")
 #var grid_size = 5
 var grid_cols = 6
 var grid_rows= 8
@@ -13,9 +12,10 @@ var tiles = {}
 #GAMEMODE CLASSIC, GRAVITY, MUTATION, ZEN
 var gameplay_mode = ""
 var game_start_time = 0.0
-var total_duration = 120.0 # 120 giây cố định cho 3 mode classic, gravity & mutation
+var total_duration = 120.0
+var accumulated_time = 0.0 # Thời gian đã chơi thực tế (trừ lúc pause) cho các mode count-up
 var is_game_over = false
-var is_paused = false # Trạng thái pause riêng
+var is_paused = false
 
 # --- BIẾN POWER-UPS ---
 var hint_available = true
@@ -108,41 +108,15 @@ func spawn_grid():
 		for y in range(grid_rows):
 			spawn_single_tile(x, y)
 			
-# --- HÀM TẠO 1 Ô ĐỘC LẬP (MÁY GACHA) ---
 func spawn_single_tile(x, y):
 	var spawn_pos = Vector2(x, y)
-	var type = "NORMAL"
-	var val = randi_range(1, 9)
-	
-	# CHỈ KÍCH HOẠT ĐỘT BIẾN NẾU ĐANG Ở MODE MUTATION
-	if gameplay_mode == "MUTATION":
-		var p = randf() # Quay 1 số ngẫu nhiên từ 0.0 đến 1.0 (tương đương 0% đến 100%)
-		
-		if p <= 0.70:
-			# 70% tỷ lệ ra số dương bình thường
-			val = randi_range(1, 9) 
-		elif p <= 0.95:
-			# 25% tỷ lệ ra số âm nhỏ (từ -5 đến -1)
-			val = randi_range(-5, -1)
-			type = "NEGATIVE"
-		else:
-			# 5% tỷ lệ ra số âm lớn (từ -9 đến -6)
-			val = randi_range(-9, -6)
-			type = "NEGATIVE"
-		
-		# Tung xúc xắc cho các đặc tính ẩn
-		var roll = randf()
-		if roll < 0.15: type = "MYSTERY"      # 15% thành Dấu ?
-		elif roll < 0.20: type = "JOKER"      # 5% thành Ngôi sao cứu mạng
-		elif roll < 0.30: type = "VIRUS"      # 10% thành Virus
-	
-	var new_tile = tile_scene.instantiate()
+	var rolled = TileFactory.roll(gameplay_mode)
+
+	var new_tile = TileFactory.make(rolled.type)
 	new_tile.position = start_pos + Vector2(x * tile_size, y * tile_size)
 	add_child(new_tile)
-	
-	new_tile.set_data(spawn_pos, val, type)
+	new_tile.set_data(spawn_pos, rolled.val, rolled.type)
 	tiles[spawn_pos] = new_tile
-	
 	return new_tile
 
 # --- BỘ CHIA TÍN HIỆU ĐIỀU KHIỂN ---
@@ -225,10 +199,9 @@ func update_selection(touch_pos: Vector2):
 				selected_tiles.append(pos)
 				tiles[pos].select()
 				
-	#Calculate SUM real time			
 	var current_sum = 0
 	for pos in selected_tiles:
-		current_sum += tiles[pos].value
+		current_sum += tiles[pos].get_effective_value()
 		
 	var sum_label = selection_box.get_node("SumLabel")
 	sum_label.text = str(current_sum)
@@ -249,28 +222,19 @@ func evaluate_selection():
 	
 	var total_sum = 0
 	var has_joker = false
-	var sum_others = 0 # Biến mới: Tính tổng các ô KHÔNG PHẢI Joker
-	
-	# Tính tổng và dò tìm Joker
-	for pos in selected_tiles: 
+
+	for pos in selected_tiles:
 		var t = tiles[pos]
 		if t.tile_type == "JOKER":
 			has_joker = true
-		else:
-			sum_others += t.value
-			total_sum += t.value
-	# Bùa hộ mệnh: Có Joker và kéo lọt vào khung ít nhất 2 ô -> Ép tổng = 10!
+		total_sum += t.get_effective_value() # JOKER trả về 0
+
 	if has_joker and selected_tiles.size() > 1:
-		var needed_value = 10 - sum_others # Xem còn thiếu bao nhiêu để tròn 10
-		
-		# Joker chỉ có thể biến hình thành 1 số từ -9 đến 9
+		var needed_value = 10 - total_sum
 		if needed_value >= -9 and needed_value <= 9:
-			total_sum = 10 # Joker bù thành công!
-			print("Joker đã biến hình thành số: ", needed_value)
+			total_sum = 10
 		else:
-			print("Joker quá tải! Cần số ", needed_value, " nhưng quá sức.")
-			total_sum = 999 # Cố tình gán 999 để phá hỏng tổng, từ chối nước đi này
-			var last_pos = selected_tiles[-1] 
+			total_sum = 999
 			show_floating_text_center("OVERLOAD")
 		
 	if total_sum == 10:
@@ -404,42 +368,32 @@ func evaluate_polygon(loop_coords: Array):
 			
 	# --- LOGIC ZEN MODE: refill ---
 func refill_empty_slots():
-	# Đợi 0.4 giây để người chơi kịp nhìn thấy các ô cũ vừa bốc hơi
-	await get_tree().create_timer(0.4).timeout 
-	
-	# Quét toàn bộ lưới 5x5 (từ 0 đến 4)
+	await get_tree().create_timer(0.4).timeout
+
 	for x in range(grid_cols):
 		for y in range(grid_rows):
 			var check_pos = Vector2(x, y)
-			
-			# Nếu tọa độ này KHÔNG có trong biến tiles (nghĩa là đang bị lủng lỗ)
 			if not tiles.has(check_pos):
-				# Tạo một ô mới tinh
-				var new_tile = tile_scene.instantiate()
+				var rolled = TileFactory.roll(gameplay_mode)
+				var new_tile = TileFactory.make(rolled.type)
 				new_tile.position = start_pos + Vector2(x * tile_size, y * tile_size)
-				
-				# Thêm một chút hiệu ứng "nhỏ dần ra to" (Scale animation) cho sinh động
-				new_tile.scale = Vector2(0.1, 0.1) # Bắt đầu từ kích thước 0
+				new_tile.scale = Vector2(0.1, 0.1)
 				add_child(new_tile)
-				
-				# Gán dữ liệu và lưu vào Dictionary
-				var random_value = randi_range(1, 9)
-				new_tile.set_data(check_pos, random_value)
+				new_tile.set_data(check_pos, rolled.val, rolled.type)
 				tiles[check_pos] = new_tile
-				
-				# Dùng Tween của Godot 4 để làm hiệu ứng phóng to mượt mà
+
 				var tween = get_tree().create_tween()
 				tween.tween_property(new_tile, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			
+
 	vertex_path.clear()
 	trace_line.clear_points()
 	
 func start_time_attack_game():
 	is_game_over = false
 	is_paused = false
-	# Lấy thời gian hệ thống tính bằng giây
 	game_start_time = Time.get_unix_time_from_system()
-	$PauseMenuLayer.hide() # Ẩn menu khi bắt đầu
+	accumulated_time = 0.0
+	$PauseMenuLayer.hide()
 
 # --- HÀM XỬ LÝ KHI HẾT 120 GIÂY ---
 func on_time_up():
@@ -456,34 +410,26 @@ func on_time_up():
 			print("BẠN ĐÃ MỞ KHÓA CHẾ ĐỘ TRỌNG LỰC!")
 			# (Cậu có thể gọi thêm hàm hiện bảng thông báo chúc mừng ở đây)
 
-func _process(_delta):
+func _process(delta):
 	if is_game_over: return
 	if is_tutorial_active: return
-	
-	# Tính toán thời gian thực bất kể game có đang pause hay không
-	var current_time = Time.get_unix_time_from_system()
-	var elapsed = current_time - game_start_time
-	
-	if gameplay_mode in ["ZEN", "MUTATION"]:
-		# --- LOGIC ZEN MODE ---
-		# Đếm thời gian đã chơi (đếm lên), không bao giờ gọi on_time_up()
-		update_timer_display(elapsed)
-		
-		# Ẩn thanh lửa đi vì Zen không có áp lực thời gian
-		if time_bar: 
-			time_bar.hide()
-	else:
-		# --- LOGIC 3 MODE CÒN LẠI (TIME ATTACK) ---
-		var time_left = max(0, total_duration - elapsed)
+
+	if gameplay_mode == "CLASSIC":
+		# Countdown luôn chạy, kể cả khi pause hay alt-tab
+		var time_left = max(0, total_duration - (Time.get_unix_time_from_system() - game_start_time))
 		update_timer_display(time_left)
-		
 		if time_bar:
 			time_bar.show()
 			time_bar.value = time_left
-		
-		# Hết 120 giây thì ép thua
 		if time_left <= 0:
 			on_time_up()
+	else:
+		# Count-up: chỉ tăng khi đang chơi thực sự
+		if not is_paused:
+			accumulated_time += delta
+		update_timer_display(accumulated_time)
+		if time_bar:
+			time_bar.hide()
 
 func update_timer_display(seconds):
 	# Format về dạng MM:SS
@@ -532,15 +478,13 @@ func _on_btn_restart_pressed():
 	print("Đã bắt đầu lại màn chơi mới!")
 
 func _on_btn_quit_pressed():
-	# get_tree().change_scene_to_file("res://main_menu.tscn")
-	# Tạm thời in ra console, sau này cậu đổi scene về Menu chính
-	print("Thoát game!")
-	get_tree().quit() # Hoặc dùng lệnh chuyển scene
+	get_tree().change_scene_to_file("res://main_menu.tscn")
 	
 func _on_btn_restart_over_pressed():
 	score = 0
 	score_label.text = "Score: 0"
 	is_game_over = false
+	accumulated_time = 0.0
 	$GameOverLayer.hide()
 	
 	# Xóa bàn cờ cũ và tạo mới
@@ -553,7 +497,7 @@ func _on_btn_restart_over_pressed():
 	start_time_attack_game()
 
 func _on_btn_quit_over_pressed():
-	get_tree().quit()
+	get_tree().change_scene_to_file("res://main_menu.tscn")
 	
 func is_within_grid(grid_pos: Vector2) -> bool:
 	return grid_pos.x >= 0 and grid_pos.x < grid_cols and grid_pos.y >= 0 and grid_pos.y < grid_rows
@@ -758,25 +702,17 @@ func find_hint_path() -> Array:
 func is_valid_sum_10(rect_tiles: Array) -> bool:
 	var total_sum = 0
 	var has_joker = false
-	var sum_others = 0
-	
-	for pos in rect_tiles: 
+
+	for pos in rect_tiles:
 		var t = tiles[pos]
 		if t.tile_type == "JOKER":
 			has_joker = true
-		else:
-			sum_others += t.value
-			total_sum += t.value
-			
-	# Áp dụng đúng luật Nerf Joker: Phải nằm trong sức chịu đựng [-9 đến 9]
+		total_sum += t.get_effective_value() # JOKER trả về 0
+
 	if has_joker:
-		var needed_value = 10 - sum_others
-		if needed_value >= -9 and needed_value <= 9:
-			return true
-		else:
-			return false
-	else:
-		return total_sum == 10
+		var needed_value = 10 - total_sum
+		return needed_value >= -9 and needed_value <= 9
+	return total_sum == 10
 
 # --- LOGIC CHẠY TUTORIAL ---
 func check_and_start_tutorial():

@@ -16,22 +16,19 @@ corner_radius_bottom_left = 15
 script = ExtResource("1_n3f48")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=832209754]
-position = Vector2(50, 50)
 shape = SubResource("RectangleShape2D_yhqha")
 
 [node name="Background" type="Panel" parent="." unique_id=1709257931]
-offset_left = -30.0
-offset_top = -30.0
-offset_right = 50.0
-offset_bottom = 50.0
+offset_left = -40.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = 40.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_n3f48")
 
 [node name="Label" type="Label" parent="Background" unique_id=1009926764]
 layout_mode = 0
-offset_left = -10.0
-offset_top = -10.0
-offset_right = 90.0
-offset_bottom = 90.0
+offset_right = 80.0
+offset_bottom = 80.0
 theme_override_font_sizes/font_size = 50
 text = "5"
 horizontal_alignment = 1
