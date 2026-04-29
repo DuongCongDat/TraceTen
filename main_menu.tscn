@@ -1,0 +1,92 @@
+[gd_scene format=3 uid="uid://uajr0fyiw5tb"]
+
+[ext_resource type="StyleBox" uid="uid://osxq0ew1yo3w" path="res://BtnMenuStyle.tres" id="1_06t4h"]
+[ext_resource type="Script" uid="uid://7c2j7lx0hde0" path="res://main_menu.gd" id="1_7vrkn"]
+
+[node name="MainMenu" type="Control" unique_id=1810294748]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_7vrkn")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1450481290]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09803922, 0.15686275, 0.25490198, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1419075710]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="MainLayout" type="VBoxContainer" parent="MarginContainer" unique_id=800204111]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/MainLayout" unique_id=1426771013]
+layout_mode = 2
+theme_override_font_sizes/font_size = 80
+text = "TraceTen"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="MarginContainer/MainLayout" unique_id=1373519526]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Buttons" type="VBoxContainer" parent="MarginContainer/MainLayout" unique_id=123219516]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="BtnClassic" type="Button" parent="MarginContainer/MainLayout/Buttons" unique_id=446371527]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_06t4h")
+theme_override_styles/pressed = ExtResource("1_06t4h")
+theme_override_styles/hover = ExtResource("1_06t4h")
+text = "Classic"
+
+[node name="BtnZen" type="Button" parent="MarginContainer/MainLayout/Buttons" unique_id=1492509368]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_06t4h")
+theme_override_styles/pressed = ExtResource("1_06t4h")
+theme_override_styles/hover = ExtResource("1_06t4h")
+text = "Zen"
+
+[node name="BtnGravity" type="Button" parent="MarginContainer/MainLayout/Buttons" unique_id=373508767]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_06t4h")
+theme_override_styles/pressed = ExtResource("1_06t4h")
+theme_override_styles/hover = ExtResource("1_06t4h")
+text = "Gravity"
+
+[node name="BtnMutation" type="Button" parent="MarginContainer/MainLayout/Buttons" unique_id=1440834526]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_06t4h")
+theme_override_styles/pressed = ExtResource("1_06t4h")
+theme_override_styles/hover = ExtResource("1_06t4h")
+text = "Mutation"
+
+[connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnClassic" to="." method="_on_btn_classic_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnZen" to="." method="_on_btn_zen_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnGravity" to="." method="_on_btn_gravity_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Buttons/BtnMutation" to="." method="_on_btn_mutation_pressed"]

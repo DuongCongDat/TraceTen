@@ -11,9 +11,13 @@ config_version=5
 [application]
 
 config/name="TraceTen"
-run/main_scene="uid://ddxc2u1pwbh8j"
+run/main_scene="uid://uajr0fyiw5tb"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[autoload]
+
+Global="*uid://cb234w7mo82on"
 
 [display]
 
