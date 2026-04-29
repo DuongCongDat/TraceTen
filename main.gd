@@ -25,6 +25,11 @@ var is_remove_mode = false # Biến này để bật chế độ "ngắm bắn" 
 
 var score = 0
 
+# --- COMBO SYSTEM ---
+var combo_count = 1
+var last_score_time = 0.0
+const COMBO_TIMEOUT = 5.0
+
 # ==========================================
 # Change GAME MODE
 # Đổi thành "TRACE" nếu muốn kẻ viền đỏ
@@ -69,6 +74,7 @@ var is_tutorial_active = false
 @onready var pause_menu = $PauseMenuLayer
 @onready var time_bar = $TimeBar
 @onready var score_label = $ScoreLabel
+@onready var combo_label = $ComboLabel
 
 var is_dragging = false
 
@@ -239,10 +245,19 @@ func evaluate_selection():
 		
 	if total_sum == 10:
 		# --- BƯỚC 1: TÍNH ĐIỂM ---
-		var points_earned = selected_tiles.size() * 1 # Mỗi ô 1 điểm
+		var used_combo = combo_count
+		var points_earned = calculate_points(selected_tiles)
 		score += points_earned
-		score_label.text = "Score: " + str(score)
-		print("Cộng " + str(points_earned) + " điểm!")
+		update_score_ui()
+		show_floating_score(points_earned, used_combo)
+
+		if gameplay_mode == "MUTATION":
+			if accumulated_time - last_score_time <= COMBO_TIMEOUT:
+				combo_count += 1
+			else:
+				combo_count = 1
+			last_score_time = accumulated_time
+			update_combo_ui()
 		
 		# --- BƯỚC 2: XÓA CÁC Ô VỪA CHỌN ---
 		for pos in selected_tiles:
@@ -393,6 +408,9 @@ func start_time_attack_game():
 	is_paused = false
 	game_start_time = Time.get_unix_time_from_system()
 	accumulated_time = 0.0
+	combo_count = 1
+	last_score_time = 0.0
+	combo_label.hide()
 	$PauseMenuLayer.hide()
 
 # --- HÀM XỬ LÝ KHI HẾT 120 GIÂY ---
@@ -430,6 +448,16 @@ func _process(delta):
 		update_timer_display(accumulated_time)
 		if time_bar:
 			time_bar.hide()
+
+		# Combo countdown (Mutation only)
+		if gameplay_mode == "MUTATION" and combo_count > 1:
+			var remaining = COMBO_TIMEOUT - (accumulated_time - last_score_time)
+			if remaining <= 0:
+				combo_count = 1
+				combo_label.hide()
+			else:
+				combo_label.show()
+				combo_label.text = "x%d  %ds" % [combo_count, ceil(remaining)]
 
 func update_timer_display(seconds):
 	# Format về dạng MM:SS
@@ -482,9 +510,11 @@ func _on_btn_quit_pressed():
 	
 func _on_btn_restart_over_pressed():
 	score = 0
-	score_label.text = "Score: 0"
 	is_game_over = false
 	accumulated_time = 0.0
+	combo_count = 1
+	last_score_time = 0.0
+	combo_label.hide()
 	$GameOverLayer.hide()
 	
 	# Xóa bàn cờ cũ và tạo mới
@@ -758,5 +788,56 @@ func _on_btn_help_pressed():
 	
 	# Hàm cập nhật giao diện điểm
 func update_score_ui():
-	# Nhớ đổi $ScoreLabel thành tên Node chứa điểm thực tế của cậu (ví dụ %Score, $UI/Score...)
 	$ScoreLabel.text = "Score: " + str(score)
+
+func calculate_points(sel_tiles: Array) -> int:
+	var base: int
+	if gameplay_mode in ["ZEN", "MUTATION"]:
+		var min_x = sel_tiles[0].x; var max_x = sel_tiles[0].x
+		var min_y = sel_tiles[0].y; var max_y = sel_tiles[0].y
+		for pos in sel_tiles:
+			min_x = min(min_x, pos.x); max_x = max(max_x, pos.x)
+			min_y = min(min_y, pos.y); max_y = max(max_y, pos.y)
+		base = int((max_x - min_x + 1) * (max_y - min_y + 1))
+	else:
+		base = sel_tiles.size()
+
+	if gameplay_mode != "MUTATION":
+		return base
+
+	var bonuses = 0
+	for pos in sel_tiles:
+		match tiles[pos].tile_type:
+			"JOKER":    bonuses += 5
+			"NEGATIVE": bonuses += 3
+			"MYSTERY":  bonuses += 2
+			"VIRUS":    bonuses += 10
+
+	return (base + bonuses) * combo_count
+
+func update_combo_ui():
+	if gameplay_mode != "MUTATION" or combo_count <= 1:
+		combo_label.hide()
+		return
+	combo_label.show()
+	combo_label.add_theme_color_override("font_color",
+		Color.ORANGE_RED if combo_count >= 4 else Color.YELLOW)
+	var tween = create_tween()
+	tween.tween_property(combo_label, "scale", Vector2(1.3, 1.3), 0.08)
+	tween.tween_property(combo_label, "scale", Vector2.ONE, 0.08)
+
+func show_floating_score(points: int, used_combo: int):
+	var label = Label.new()
+	label.text = "+" + str(points) + (" x%d!" % used_combo if used_combo > 1 else "")
+	label.add_theme_font_size_override("font_size", 55)
+	var color = Color.ORANGE_RED if used_combo >= 4 else (Color.YELLOW if used_combo >= 2 else Color.WHITE)
+	label.add_theme_color_override("font_color", color)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.size = Vector2(260, 80)
+	var box_center = selection_box.position + selection_box.size / 2.0
+	label.position = box_center - Vector2(130, 40)
+	add_child(label)
+	var tween = create_tween()
+	tween.tween_property(label, "position", label.position - Vector2(0, 100), 0.9).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.9)
+	tween.tween_callback(label.queue_free)

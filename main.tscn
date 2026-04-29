@@ -117,6 +117,16 @@ offset_bottom = 102.0
 theme_override_font_sizes/font_size = 25
 text = "Score: 0"
 
+[node name="ComboLabel" type="Label" parent="." unique_id=1100000001]
+unique_name_in_owner = true
+offset_left = 490.0
+offset_top = 65.0
+offset_right = 700.0
+offset_bottom = 115.0
+theme_override_font_sizes/font_size = 45
+horizontal_alignment = 2
+visible = false
+
 [node name="GameOverLayer" type="CanvasLayer" parent="." unique_id=1213239824]
 visible = false
 
