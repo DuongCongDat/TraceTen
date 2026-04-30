@@ -28,6 +28,7 @@ func _process(delta):
 			get_parent().kill_tile_from_virus(grid_pos)
 	else:
 		update_visuals()
+		var normal_scale = scale
 		var tween = create_tween()
-		tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.1)
-		tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.1)
+		tween.tween_property(self, "scale", normal_scale * 1.2, 0.1)
+		tween.tween_property(self, "scale", normal_scale, 0.1)
