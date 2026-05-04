@@ -119,19 +119,19 @@ text = "Score: 0"
 
 [node name="GravityLevelLabel" type="Label" parent="." unique_id=1900000003]
 offset_left = 25.0
-offset_top = 107.0
-offset_right = 200.0
-offset_bottom = 130.0
-theme_override_font_sizes/font_size = 22
+offset_top = 104.0
+offset_right = 210.0
+offset_bottom = 132.0
+theme_override_font_sizes/font_size = 26
 text = "Lv.1"
 visible = false
 
 [node name="LivesLabel" type="Label" parent="." unique_id=1900000004]
-offset_left = 490.0
-offset_top = 79.0
-offset_right = 710.0
-offset_bottom = 107.0
-theme_override_font_sizes/font_size = 28
+offset_left = 480.0
+offset_top = 76.0
+offset_right = 715.0
+offset_bottom = 110.0
+theme_override_font_sizes/font_size = 32
 text = "♥♥♥"
 visible = false
 
@@ -226,6 +226,7 @@ layout_mode = 2
 text = "Remove"
 
 [node name="TutorialLayer" type="CanvasLayer" parent="." unique_id=177839691]
+visible = false
 
 [node name="ColorRect" type="ColorRect" parent="TutorialLayer" unique_id=1711790801]
 anchors_preset = 15

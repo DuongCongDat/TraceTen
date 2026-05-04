@@ -1,0 +1,239 @@
+[gd_scene format=3 uid="uid://cwm2p4r8n7k1"]
+
+[ext_resource type="StyleBox" uid="uid://osxq0ew1yo3w" path="res://BtnMenuStyle.tres" id="1_style"]
+[ext_resource type="Script" uid="uid://b6x9j3m5q1t8" path="res://mode_select.gd" id="2_script"]
+
+[node name="ModeSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09803922, 0.15686275, 0.25490198, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="MainLayout" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TopBar" type="HBoxContainer" parent="MarginContainer/MainLayout"]
+layout_mode = 2
+
+[node name="BtnBack" type="Button" parent="MarginContainer/MainLayout/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "← Back"
+
+[node name="PageTitle" type="Label" parent="MarginContainer/MainLayout/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 50
+text = "Select Mode"
+horizontal_alignment = 1
+
+[node name="HSep" type="HSeparator" parent="MarginContainer/MainLayout"]
+layout_mode = 2
+
+[node name="Modes" type="VBoxContainer" parent="MarginContainer/MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="ClassicCard" type="VBoxContainer" parent="MarginContainer/MainLayout/Modes"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnClassic" type="Button" parent="MarginContainer/MainLayout/Modes/ClassicCard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "Classic"
+
+[node name="LblClassicDesc" type="Label" parent="MarginContainer/MainLayout/Modes/ClassicCard"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "120s countdown — how high can you score?"
+horizontal_alignment = 1
+
+[node name="ZenCard" type="VBoxContainer" parent="MarginContainer/MainLayout/Modes"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnZen" type="Button" parent="MarginContainer/MainLayout/Modes/ZenCard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "Zen"
+
+[node name="LblZenDesc" type="Label" parent="MarginContainer/MainLayout/Modes/ZenCard"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "No time limit — relax and stack combos."
+horizontal_alignment = 1
+
+[node name="GravityCard" type="VBoxContainer" parent="MarginContainer/MainLayout/Modes"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnGravity" type="Button" parent="MarginContainer/MainLayout/Modes/GravityCard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "Gravity"
+
+[node name="LblGravityDesc" type="Label" parent="MarginContainer/MainLayout/Modes/GravityCard"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "150s + 3 lives — tiles shift direction each level."
+horizontal_alignment = 1
+
+[node name="MutationCard" type="VBoxContainer" parent="MarginContainer/MainLayout/Modes"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnMutation" type="Button" parent="MarginContainer/MainLayout/Modes/MutationCard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "Mutation"
+
+[node name="LblMutationDesc" type="Label" parent="MarginContainer/MainLayout/Modes/MutationCard"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Special tiles with unique powers — count up."
+horizontal_alignment = 1
+
+[node name="SaveSubMenu" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="DimBg" type="ColorRect" parent="SaveSubMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="OuterMargin" type="MarginContainer" parent="SaveSubMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 80
+theme_override_constants/margin_top = 80
+theme_override_constants/margin_right = 80
+theme_override_constants/margin_bottom = 80
+
+[node name="InnerBox" type="VBoxContainer" parent="SaveSubMenu/OuterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="TopSpacer" type="Control" parent="SaveSubMenu/OuterMargin/InnerBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Title" type="Label" parent="SaveSubMenu/OuterMargin/InnerBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 50
+text = "Resume?"
+horizontal_alignment = 1
+
+[node name="LblInfo" type="Label" parent="SaveSubMenu/OuterMargin/InnerBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Score: 0  |  Time: 00:00"
+horizontal_alignment = 1
+
+[node name="SubHSep" type="HSeparator" parent="SaveSubMenu/OuterMargin/InnerBox"]
+layout_mode = 2
+
+[node name="BtnContinue" type="Button" parent="SaveSubMenu/OuterMargin/InnerBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "Continue"
+
+[node name="BtnNewGame" type="Button" parent="SaveSubMenu/OuterMargin/InnerBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "New Game"
+
+[node name="BtnCancel" type="Button" parent="SaveSubMenu/OuterMargin/InnerBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "Cancel"
+
+[node name="BottomSpacer" type="Control" parent="SaveSubMenu/OuterMargin/InnerBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[connection signal="pressed" from="MarginContainer/MainLayout/TopBar/BtnBack" to="." method="_on_btn_back_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Modes/ClassicCard/BtnClassic" to="." method="_on_btn_classic_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Modes/ZenCard/BtnZen" to="." method="_on_btn_zen_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Modes/GravityCard/BtnGravity" to="." method="_on_btn_gravity_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Modes/MutationCard/BtnMutation" to="." method="_on_btn_mutation_pressed"]
+[connection signal="pressed" from="SaveSubMenu/OuterMargin/InnerBox/BtnContinue" to="." method="_on_btn_continue_pressed"]
+[connection signal="pressed" from="SaveSubMenu/OuterMargin/InnerBox/BtnNewGame" to="." method="_on_btn_new_game_pressed"]
+[connection signal="pressed" from="SaveSubMenu/OuterMargin/InnerBox/BtnCancel" to="." method="_on_btn_cancel_pressed"]

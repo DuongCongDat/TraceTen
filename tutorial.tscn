@@ -1,0 +1,161 @@
+[gd_scene format=3 uid="uid://f3j6oar2t5w8"]
+
+[ext_resource type="StyleBox" uid="uid://osxq0ew1yo3w" path="res://BtnMenuStyle.tres" id="1_style"]
+[ext_resource type="Script" uid="uid://g2l5n8q1s4v7" path="res://tutorial.gd" id="2_script"]
+
+[node name="Tutorial" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09803922, 0.15686275, 0.25490198, 1)
+
+[node name="ListLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ListLayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="MainLayout" type="VBoxContainer" parent="ListLayer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="TopBar" type="HBoxContainer" parent="ListLayer/MarginContainer/MainLayout"]
+layout_mode = 2
+
+[node name="BtnBack" type="Button" parent="ListLayer/MarginContainer/MainLayout/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "← Back"
+
+[node name="PageTitle" type="Label" parent="ListLayer/MarginContainer/MainLayout/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 50
+text = "Tutorial"
+horizontal_alignment = 1
+
+[node name="HSep" type="HSeparator" parent="ListLayer/MarginContainer/MainLayout"]
+layout_mode = 2
+
+[node name="CardList" type="VBoxContainer" parent="ListLayer/MarginContainer/MainLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="DemoLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="StepLabel" type="Label" parent="DemoLayer"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_right = 1.0
+offset_top = 12.0
+offset_bottom = 48.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+horizontal_alignment = 1
+
+[node name="InstructionLabel" type="Label" parent="DemoLayer"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -310.0
+offset_top = 50.0
+offset_right = 310.0
+offset_bottom = 130.0
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.92, 0.92, 0.95, 1)
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="BoardContainer" type="Node2D" parent="DemoLayer"]
+unique_name_in_owner = true
+
+[node name="SelectionBox" type="ColorRect" parent="DemoLayer"]
+unique_name_in_owner = true
+z_index = 10
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(1, 1, 0.46666667, 0.39215687)
+visible = false
+
+[node name="CursorDot" type="ColorRect" parent="DemoLayer"]
+unique_name_in_owner = true
+z_index = 20
+offset_right = 24.0
+offset_bottom = 24.0
+color = Color(1.0, 0.55, 0.1, 0.80)
+visible = false
+
+[node name="ControlBar" type="HBoxContainer" parent="DemoLayer"]
+layout_mode = 1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -80.0
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="BtnBackDemo" type="Button" parent="DemoLayer/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(130, 60)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "← List"
+
+[node name="BtnReplay" type="Button" parent="DemoLayer/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(160, 60)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "↺ Replay"
+
+[connection signal="pressed" from="ListLayer/MarginContainer/MainLayout/TopBar/BtnBack" to="." method="_on_btn_back_pressed"]
+[connection signal="pressed" from="DemoLayer/ControlBar/BtnBackDemo" to="." method="_on_btn_back_demo_pressed"]
+[connection signal="pressed" from="DemoLayer/ControlBar/BtnReplay" to="." method="_on_btn_replay_pressed"]

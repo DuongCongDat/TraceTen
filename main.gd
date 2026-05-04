@@ -34,6 +34,7 @@ const TILE_VISUAL_RATIO = 0.90  # tiles render at 90% of cell → ~10% gap betwe
 
 # --- GRAVITY SYSTEM ---
 var gravity_level = 1
+var gravity_l4_dir = "DOWN"
 const GRAVITY_LEVEL_SCORE = 50  # score needed to advance each level
 const GRAVITY_TIME_PER_TILE = 1.0  # +seconds per tile eaten in Gravity mode
 
@@ -63,7 +64,7 @@ var tutorial_texts = {
 	"GRAVITY": [
 		"Gravity Mode!\n\nAfter each score, tiles fall to fill the gaps. No new tiles appear — plan carefully!",
 		"3 lives (♥♥♥): each Shuffle costs 1 life.\nRun out of lives OR time = GAME OVER.\nGravity direction changes every 50 points.",
-		"Levels: L1 Down → L2 Right → L3 Left → L4 Outward\nEat more tiles at once to earn bonus seconds!"
+		"Levels: L1 Down → L2 Right → L3 Left → L4 Random\nAt L4, gravity direction changes every move — watch the arrow!"
 	],
 	"MUTATION": [
 		"Mutation Mode!\n\nRed tiles carry negative values — use them to balance large positives.",
@@ -123,9 +124,13 @@ func _ready():
 	update_score_ui()
 
 	setup_mode_config()
-	spawn_grid()
 	$TutorialLayer.hide()
 	start_time_attack_game()
+	if Global.load_save and gameplay_mode in ["ZEN", "MUTATION"]:
+		_load_game_state()
+		Global.load_save = false
+	else:
+		spawn_grid()
 	_init_debug_ui()
 
 
@@ -134,6 +139,7 @@ func setup_mode_config():
 	remove_count = 1
 	max_combo    = 1
 	gravity_level      = 1
+	gravity_l4_dir     = "DOWN"
 	zen_milestone_count = 0
 
 	match gameplay_mode:
@@ -350,6 +356,10 @@ func evaluate_selection():
 				check_gravity_level_up()
 				apply_gravity()
 				await get_tree().create_timer(0.6).timeout
+				var cleared_pct = 1.0 - float(tiles.size()) / float(grid_rows * grid_cols)
+				if cleared_pct >= 0.70:
+					refill_empty_slots()
+					return  # check_end_game called inside refill_empty_slots
 				check_end_game()
 			"ZEN", "MUTATION":
 				var cleared_pct = 1.0 - float(tiles.size()) / float(grid_rows * grid_cols)
@@ -379,8 +389,21 @@ func _check_zen_milestone():
 		hint_count   += 1
 		shuffle_count += 1
 		remove_count  += 1
-		show_floating_text_center("Power-up +1!", Color.LIME_GREEN)  # green = good news
+		show_floating_text_center("Power-up +1!", Color.LIME_GREEN)
 		update_power_up_ui()
+	_check_zen_level_unlock()
+
+
+func _check_zen_level_unlock():
+	if gameplay_mode != "ZEN": return
+	if ZenLevelManager.is_last_level(Global.zen_current_level): return
+	var next_level = Global.zen_current_level + 1
+	if next_level > ZenLevels.LEVELS.size(): return
+	var unlock_score = ZenLevelManager.get_unlock_score(next_level)
+	if score >= unlock_score and not (next_level in Global.zen_unlocked_levels):
+		Global.zen_unlocked_levels.append(next_level)
+		var level_name = ZenLevelManager.get_level_name(next_level)
+		show_floating_text_center("L%d %s unlocked!" % [next_level, level_name], Color.GOLD)
 
 
 # ==========================================
@@ -391,7 +414,7 @@ func scan_board_for_valid_moves() -> bool:
 
 
 func check_end_game():
-	if gameplay_mode == "ZEN" or is_game_over: return
+	if is_game_over: return
 	if hint_count > 0 or shuffle_count > 0 or remove_count > 0: return
 	if not scan_board_for_valid_moves():
 		trigger_end_game("NO_MOVES")
@@ -400,6 +423,7 @@ func check_end_game():
 func trigger_end_game(reason: String):
 	if is_game_over: return
 	is_game_over = true
+	Global.delete_save(gameplay_mode)
 
 	var reason_text: String
 	match reason:
@@ -439,8 +463,60 @@ func check_gravity_level_up():
 	var new_level = min(4, 1 + score / GRAVITY_LEVEL_SCORE)
 	if new_level > gravity_level:
 		gravity_level = new_level
-		show_floating_text_center("LEVEL " + str(gravity_level) + "!")
+		if gravity_level == 4:
+			var dirs = ["DOWN", "UP", "LEFT", "RIGHT"]
+			gravity_l4_dir = dirs[randi() % dirs.size()]
 		update_gravity_level_ui()
+		_show_level_up_banner(gravity_level)
+
+
+func _show_level_up_banner(level: int):
+	var dir_text = {2: "RIGHT  →", 3: "←  LEFT", 4: "RANDOM  ↯"}
+	var colors   = {
+		2: Color(0.25, 0.88, 1.0),
+		3: Color(1.0,  0.55, 0.1),
+		4: Color(1.0,  0.3,  0.65),
+	}
+	var screen = get_viewport_rect().size
+	var color  = colors.get(level, Color.WHITE)
+
+	var wrap = Control.new()
+	wrap.position = Vector2.ZERO
+	wrap.size = screen
+	wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(wrap)
+
+	var lbl_level = Label.new()
+	lbl_level.text = "LEVEL %d" % level
+	lbl_level.add_theme_font_size_override("font_size", 82)
+	lbl_level.add_theme_color_override("font_color", color)
+	lbl_level.add_theme_color_override("font_outline_color", Color.BLACK)
+	lbl_level.add_theme_constant_override("outline_size", 6)
+	lbl_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_level.size = Vector2(screen.x, 105)
+	lbl_level.position = Vector2(0, screen.y / 2.0 - 85)
+	wrap.add_child(lbl_level)
+
+	var lbl_dir = Label.new()
+	lbl_dir.text = dir_text.get(level, "")
+	lbl_dir.add_theme_font_size_override("font_size", 42)
+	lbl_dir.add_theme_color_override("font_color", color.lightened(0.15))
+	lbl_dir.add_theme_color_override("font_outline_color", Color.BLACK)
+	lbl_dir.add_theme_constant_override("outline_size", 4)
+	lbl_dir.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_dir.size = Vector2(screen.x, 60)
+	lbl_dir.position = Vector2(0, screen.y / 2.0 + 28)
+	wrap.add_child(lbl_dir)
+
+	wrap.pivot_offset = screen / 2.0
+	wrap.scale = Vector2(0.15, 0.15)
+
+	var tween = create_tween()
+	tween.tween_property(wrap, "scale", Vector2(1.15, 1.15), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(wrap, "scale", Vector2(1.0, 1.0), 0.1)
+	tween.tween_interval(0.8)
+	tween.tween_property(wrap, "modulate:a", 0.0, 0.35)
+	tween.tween_callback(wrap.queue_free)
 
 
 func get_gravity_direction() -> String:
@@ -448,16 +524,20 @@ func get_gravity_direction() -> String:
 		1: return "DOWN"
 		2: return "RIGHT"
 		3: return "LEFT"
-		_: return "RADIAL"
+		_: return gravity_l4_dir
 
 
 func apply_gravity():
 	await get_tree().create_timer(0.2).timeout
 	match get_gravity_direction():
-		"DOWN":   _apply_gravity_down()
-		"RIGHT":  _apply_gravity_horizontal(true)
-		"LEFT":   _apply_gravity_horizontal(false)
-		"RADIAL": _apply_gravity_radial()
+		"DOWN":  _apply_gravity_down()
+		"UP":    _apply_gravity_up()
+		"RIGHT": _apply_gravity_horizontal(true)
+		"LEFT":  _apply_gravity_horizontal(false)
+	if gravity_level == 4:
+		var dirs = ["DOWN", "UP", "LEFT", "RIGHT"]
+		gravity_l4_dir = dirs[randi() % dirs.size()]
+		update_gravity_level_ui()
 
 
 func _move_tile(from_pos: Vector2, to_pos: Vector2):
@@ -482,6 +562,17 @@ func _apply_gravity_down():
 				_move_tile(p, Vector2(x, y + empty))
 
 
+func _apply_gravity_up():
+	for x in range(grid_cols):
+		var empty = 0
+		for y in range(grid_rows):
+			var p = Vector2(x, y)
+			if not tiles.has(p):
+				empty += 1
+			elif empty > 0:
+				_move_tile(p, Vector2(x, y - empty))
+
+
 func _apply_gravity_horizontal(fall_right: bool):
 	for y in range(grid_rows):
 		var empty = 0
@@ -501,25 +592,6 @@ func _apply_gravity_horizontal(fall_right: bool):
 					_move_tile(p, Vector2(x - empty, y))
 
 
-func _apply_gravity_radial():
-	# Left half (x < 4): tiles fall left toward x=0
-	# Right half (x >= 4): tiles fall right toward x=grid_cols-1
-	var cx = grid_cols / 2
-	for y in range(grid_rows):
-		var empty = 0
-		for x in range(cx):
-			var p = Vector2(x, y)
-			if not tiles.has(p):
-				empty += 1
-			elif empty > 0:
-				_move_tile(p, Vector2(x - empty, y))
-		empty = 0
-		for x in range(grid_cols - 1, cx - 1, -1):
-			var p = Vector2(x, y)
-			if not tiles.has(p):
-				empty += 1
-			elif empty > 0:
-				_move_tile(p, Vector2(x + empty, y))
 
 
 # ==========================================
@@ -572,16 +644,20 @@ func start_time_attack_game():
 
 
 func _process(delta):
-	if is_game_over or is_tutorial_active: return
+	if is_game_over: return
 
 	if gameplay_mode in ["CLASSIC", "GRAVITY"]:
+		# Timer keeps running even when tutorial overlay is open
 		var time_left = max(0.0, total_duration - (Time.get_unix_time_from_system() - game_start_time))
 		update_timer_display(time_left)
 		if time_bar:
 			time_bar.value = time_left
 		if time_left <= 0:
 			on_time_up()
-	else:
+
+	if is_tutorial_active: return
+
+	if gameplay_mode not in ["CLASSIC", "GRAVITY"]:
 		if not is_paused:
 			accumulated_time += delta
 		update_timer_display(accumulated_time)
@@ -635,6 +711,7 @@ func _on_btn_quit_pressed():
 	if gameplay_mode in ["CLASSIC", "GRAVITY"]:
 		trigger_end_game("LEFT")
 	else:
+		_save_game_state()
 		get_tree().change_scene_to_file("res://main_menu.tscn")
 
 
@@ -648,6 +725,12 @@ func _on_btn_quit_over_pressed():
 
 
 func _reset_game():
+	var overlay = get_node_or_null("TutorialOverlay")
+	if overlay:
+		overlay.queue_free()
+	is_tutorial_active = false
+
+	Global.delete_save(gameplay_mode)
 	score = 0
 	is_game_over = false
 	accumulated_time = 0.0
@@ -739,27 +822,26 @@ func _on_btn_remove_pressed():
 # UI UPDATE
 # ==========================================
 func update_power_up_ui():
-	var hint_btn   = $PowerUpContainer/BtnHint
+	var hint_btn    = $PowerUpContainer/BtnHint
 	var shuffle_btn = $PowerUpContainer/BtnShuffle
-	var remove_btn = $PowerUpContainer/BtnRemove
+	var remove_btn  = $PowerUpContainer/BtnRemove
 
 	hint_btn.disabled = hint_count <= 0
-	hint_btn.text = "Hint" if hint_count <= 1 else "Hint x%d" % hint_count
+	hint_btn.text = "? Hint" if hint_count <= 1 else "? Hint x%d" % hint_count
 
 	if gameplay_mode == "GRAVITY":
-		# Shuffle acts as lives button in Gravity
 		shuffle_btn.disabled = shuffle_count <= 0
 		shuffle_btn.text = "♥x%d" % max(shuffle_count, 0)
 	else:
 		shuffle_btn.disabled = shuffle_count <= 0
-		shuffle_btn.text = "Shuffle" if shuffle_count <= 1 else "Shuffle x%d" % shuffle_count
+		shuffle_btn.text = "↺ Shuffle" if shuffle_count <= 1 else "↺ x%d" % shuffle_count
 
 	if is_remove_mode:
-		remove_btn.text = "Cancel"
+		remove_btn.text = "✕ Cancel"
 		remove_btn.disabled = false
 	else:
 		remove_btn.disabled = remove_count <= 0
-		remove_btn.text = "Remove" if remove_count <= 1 else "Remove x%d" % remove_count
+		remove_btn.text = "✕ Del" if remove_count <= 1 else "✕ Del x%d" % remove_count
 
 
 func update_lives_ui():
@@ -770,11 +852,16 @@ func update_lives_ui():
 	for i in range(3 - shuffle_count):
 		hearts += "♡"
 	lives_label.text = hearts
+	lives_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35, 1.0))
 
 
 func update_gravity_level_ui():
 	if gameplay_mode != "GRAVITY": return
-	gravity_level_label.text = "Lv." + str(gravity_level)
+	if gravity_level == 4:
+		var arrows = {"DOWN": "↓", "UP": "↑", "LEFT": "←", "RIGHT": "→"}
+		gravity_level_label.text = "Lv.4 " + arrows.get(gravity_l4_dir, "")
+	else:
+		gravity_level_label.text = "Lv." + str(gravity_level)
 
 
 func update_score_ui():
@@ -792,7 +879,15 @@ func calculate_points(sel_tiles: Array) -> int:
 		for pos in sel_tiles:
 			min_x = min(min_x, pos.x); max_x = max(max_x, pos.x)
 			min_y = min(min_y, pos.y); max_y = max(max_y, pos.y)
-		base = int((max_x - min_x + 1) * (max_y - min_y + 1))
+		var bbox_area = (max_x - min_x + 1) * (max_y - min_y + 1)
+		var tile_count = sel_tiles.size()
+		var density = float(tile_count) / float(bbox_area)
+		if density < 0.3:
+			base = tile_count
+		else:
+			base = bbox_area
+		if DEBUG_MODE:
+			print("[ZEN/MUT density] density=%.2f  tile=%d  bbox=%d  base=%d" % [density, tile_count, bbox_area, base])
 	else:
 		base = sel_tiles.size()
 
@@ -1012,7 +1107,19 @@ func _on_btn_skip_pressed():
 
 
 func _on_btn_help_pressed():
-	start_tutorial()
+	if is_tutorial_active: return
+	is_tutorial_active = true
+	var layer := CanvasLayer.new()
+	layer.name = "TutorialOverlay"
+	var tut: Control = load("res://tutorial.tscn").instantiate()
+	layer.add_child(tut)
+	add_child(layer)
+	tut.close_requested.connect(_on_tutorial_overlay_closed.bind(layer))
+
+
+func _on_tutorial_overlay_closed(layer: CanvasLayer):
+	layer.queue_free()
+	is_tutorial_active = false
 
 
 # ==========================================
@@ -1036,6 +1143,58 @@ func _show_time_bonus(seconds: float):
 	tween.tween_property(label, "position", label.position - Vector2(0, 50), 1.0).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 1.0)
 	tween.tween_callback(label.queue_free)
+
+
+# ==========================================
+# SAVE / LOAD (ZEN & MUTATION)
+# ==========================================
+func _save_game_state():
+	if not (gameplay_mode in ["ZEN", "MUTATION"]): return
+	var tile_list = []
+	for pos in tiles.keys():
+		var t = tiles[pos]
+		tile_list.append({"x": int(pos.x), "y": int(pos.y), "value": t.value, "type": t.tile_type})
+	var save_data = {
+		"mode": gameplay_mode,
+		"score": score,
+		"accumulated_time": accumulated_time,
+		"hint_count": hint_count,
+		"shuffle_count": shuffle_count,
+		"remove_count": remove_count,
+		"zen_milestone_count": zen_milestone_count,
+		"tiles": tile_list,
+	}
+	if gameplay_mode == "ZEN":
+		save_data["current_level"] = Global.zen_current_level
+		save_data["unlocked_levels"] = Global.zen_unlocked_levels
+	Global.save_game(save_data, gameplay_mode)
+
+
+func _load_game_state():
+	var data = Global.load_game(gameplay_mode)
+	if data.is_empty(): return
+
+	score               = int(data.get("score", 0))
+	accumulated_time    = float(data.get("accumulated_time", 0.0))
+	hint_count          = int(data.get("hint_count", 1))
+	shuffle_count       = int(data.get("shuffle_count", 1))
+	remove_count        = int(data.get("remove_count", 1))
+	zen_milestone_count = int(data.get("zen_milestone_count", 0))
+	if gameplay_mode == "ZEN":
+		Global.zen_current_level   = int(data.get("current_level", 1))
+		Global.zen_unlocked_levels = data.get("unlocked_levels", [1])
+
+	for td in data.get("tiles", []):
+		var pos = Vector2(int(td["x"]), int(td["y"]))
+		var new_tile = TileFactory.make(td["type"])
+		new_tile.position = start_pos + Vector2(int(td["x"]) * tile_size, int(td["y"]) * tile_size)
+		new_tile.scale = _tile_normal_scale()
+		add_child(new_tile)
+		new_tile.set_data(pos, int(td["value"]), td["type"])
+		tiles[pos] = new_tile
+
+	update_score_ui()
+	update_power_up_ui()
 
 
 # ==========================================
@@ -1100,8 +1259,8 @@ func _debug_time_up():
 func _debug_next_level():
 	if gameplay_mode != "GRAVITY": return
 	gravity_level = min(gravity_level + 1, 4)
-	show_floating_text_center("LEVEL " + str(gravity_level) + "!")
 	update_gravity_level_ui()
+	_show_level_up_banner(gravity_level)
 
 
 func _debug_add_score():
