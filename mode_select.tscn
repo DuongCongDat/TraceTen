@@ -144,6 +144,26 @@ theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
 text = "Special tiles with unique powers — count up."
 horizontal_alignment = 1
 
+[node name="ChallengeCard" type="VBoxContainer" parent="MarginContainer/MainLayout/Modes"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnChallenge" type="Button" parent="MarginContainer/MainLayout/Modes/ChallengeCard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = ExtResource("1_style")
+theme_override_styles/pressed = ExtResource("1_style")
+theme_override_styles/hover = ExtResource("1_style")
+text = "Challenge"
+
+[node name="LblChallengeDesc" type="Label" parent="MarginContainer/MainLayout/Modes/ChallengeCard"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "12 levels — match the shape constraint to score."
+horizontal_alignment = 1
+
 [node name="SaveSubMenu" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -234,6 +254,7 @@ size_flags_vertical = 3
 [connection signal="pressed" from="MarginContainer/MainLayout/Modes/ZenCard/BtnZen" to="." method="_on_btn_zen_pressed"]
 [connection signal="pressed" from="MarginContainer/MainLayout/Modes/GravityCard/BtnGravity" to="." method="_on_btn_gravity_pressed"]
 [connection signal="pressed" from="MarginContainer/MainLayout/Modes/MutationCard/BtnMutation" to="." method="_on_btn_mutation_pressed"]
+[connection signal="pressed" from="MarginContainer/MainLayout/Modes/ChallengeCard/BtnChallenge" to="." method="_on_btn_challenge_pressed"]
 [connection signal="pressed" from="SaveSubMenu/OuterMargin/InnerBox/BtnContinue" to="." method="_on_btn_continue_pressed"]
 [connection signal="pressed" from="SaveSubMenu/OuterMargin/InnerBox/BtnNewGame" to="." method="_on_btn_new_game_pressed"]
 [connection signal="pressed" from="SaveSubMenu/OuterMargin/InnerBox/BtnCancel" to="." method="_on_btn_cancel_pressed"]

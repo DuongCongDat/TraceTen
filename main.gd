@@ -52,7 +52,8 @@ var seen_tutorials = {
 	"CLASSIC": false,
 	"GRAVITY": false,
 	"ZEN": false,
-	"MUTATION": false
+	"MUTATION": false,
+	"CHALLENGE": false,
 }
 
 var tutorial_texts = {
@@ -74,6 +75,11 @@ var tutorial_texts = {
 	"ZEN": [
 		"Zen Mode!\n\nNo time limit. Play at your own pace and aim for a high score.",
 		"Board refills automatically when 70% cleared.\nEvery 100 points, all power-ups restore once — and they stack!"
+	],
+	"CHALLENGE": [
+		"Challenge Mode!\n\n12 levels, each with a unique shape constraint. Match the constraint AND sum to 10 to score!",
+		"Each level unlocks at a score milestone.\nThe current constraint is shown at the top — drag the wrong shape and it won't count.",
+		"No time limit. Power-ups refill every 100 points.\nProgress saves automatically when you pause."
 	]
 }
 
@@ -88,6 +94,12 @@ var is_tutorial_active = false
 @onready var combo_label = $ComboLabel
 @onready var lives_label = $LivesLabel
 @onready var gravity_level_label = $GravityLevelLabel
+@onready var challenge_level_label = $ChallengeLevelLabel
+@onready var challenge_constraint_label = $ChallengeConstraintLabel
+@onready var btn_change_level = $PauseMenuLayer/VBoxContainer/BtnChangeLevel
+@onready var btn_change_level_hud = $BtnChangeLevelHUD
+
+var _change_level_layer: CanvasLayer = null
 
 var is_dragging = false
 var drag_start_grid = Vector2.ZERO
@@ -126,7 +138,7 @@ func _ready():
 	setup_mode_config()
 	$TutorialLayer.hide()
 	start_time_attack_game()
-	if Global.load_save and gameplay_mode in ["ZEN", "MUTATION"]:
+	if Global.load_save and gameplay_mode in ["ZEN", "MUTATION", "CHALLENGE"]:
 		_load_game_state()
 		Global.load_save = false
 	else:
@@ -159,12 +171,24 @@ func setup_mode_config():
 			time_bar.max_value = total_duration
 			lives_label.hide()
 			gravity_level_label.hide()
-		_:  # ZEN, MUTATION
+		_:  # ZEN, MUTATION, CHALLENGE
 			shuffle_count = 1
 			total_duration = 120.0
 			time_bar.hide()
 			lives_label.hide()
 			gravity_level_label.hide()
+
+	if gameplay_mode == "CHALLENGE":
+		challenge_level_label.show()
+		challenge_constraint_label.show()
+		btn_change_level.show()
+		btn_change_level_hud.show()
+		_update_challenge_hud()
+	else:
+		challenge_level_label.hide()
+		challenge_constraint_label.hide()
+		btn_change_level.hide()
+		btn_change_level_hud.hide()
 
 	update_power_up_ui()
 
@@ -173,6 +197,10 @@ func setup_mode_config():
 # BOARD GENERATION
 # ==========================================
 func spawn_grid():
+	if gameplay_mode == "CHALLENGE":
+		_spawn_challenge_board()
+		return
+
 	# For Classic, retry until board has at least one valid move
 	for attempt in range(5):
 		for x in range(grid_cols):
@@ -185,6 +213,18 @@ func spawn_grid():
 		for pos in tiles.keys():
 			tiles[pos].queue_free()
 		tiles.clear()
+
+
+func _spawn_challenge_board():
+	var board_data: Dictionary = ZenBoardGenerator.generate(Global.zen_current_level)
+	for pos in board_data.keys():
+		var data = board_data[pos]
+		var new_tile = TileFactory.make(data["type"])
+		new_tile.position = start_pos + Vector2(pos.x * tile_size, pos.y * tile_size)
+		new_tile.scale = _tile_normal_scale()
+		add_child(new_tile)
+		new_tile.set_data(pos, data["val"], data["type"])
+		tiles[pos] = new_tile
 
 
 func spawn_single_tile(x, y):
@@ -319,6 +359,24 @@ func evaluate_selection():
 			show_floating_text_center("OVERLOAD")
 
 	if total_sum == 10:
+		if gameplay_mode == "CHALLENGE":
+			var min_cx = selected_tiles[0].x; var max_cx = selected_tiles[0].x
+			var min_cy = selected_tiles[0].y; var max_cy = selected_tiles[0].y
+			for pos in selected_tiles:
+				min_cx = min(min_cx, pos.x); max_cx = max(max_cx, pos.x)
+				min_cy = min(min_cy, pos.y); max_cy = max(max_cy, pos.y)
+			var bbox := Rect2i(min_cx, min_cy, max_cx - min_cx + 1, max_cy - min_cy + 1)
+			var c_result = ZenLevelManager.validate_constraint(bbox, selected_tiles.size(), Global.zen_current_level)
+			if not c_result["valid"]:
+				combo_count = 1
+				update_combo_ui()
+				show_floating_text_center("Wrong shape!", Color.ORANGE_RED)
+				await get_tree().create_timer(0.3).timeout
+				for pos in selected_tiles:
+					if tiles.has(pos): tiles[pos].deselect()
+				selected_tiles.clear()
+				return
+
 		var used_combo = combo_count
 		var points_earned = calculate_points(selected_tiles)
 		score += points_earned
@@ -361,7 +419,7 @@ func evaluate_selection():
 					refill_empty_slots()
 					return  # check_end_game called inside refill_empty_slots
 				check_end_game()
-			"ZEN", "MUTATION":
+			"ZEN", "MUTATION", "CHALLENGE":
 				var cleared_pct = 1.0 - float(tiles.size()) / float(grid_rows * grid_cols)
 				if cleared_pct >= 0.70:
 					_check_zen_milestone()
@@ -382,7 +440,7 @@ func evaluate_selection():
 
 
 func _check_zen_milestone():
-	if gameplay_mode != "ZEN": return
+	if gameplay_mode not in ["ZEN", "CHALLENGE"]: return
 	var milestone = score / ZEN_REFILL_MILESTONE
 	if milestone > zen_milestone_count:
 		zen_milestone_count = milestone
@@ -395,7 +453,7 @@ func _check_zen_milestone():
 
 
 func _check_zen_level_unlock():
-	if gameplay_mode != "ZEN": return
+	if gameplay_mode not in ["ZEN", "CHALLENGE"]: return
 	if ZenLevelManager.is_last_level(Global.zen_current_level): return
 	var next_level = Global.zen_current_level + 1
 	if next_level > ZenLevels.LEVELS.size(): return
@@ -444,6 +502,8 @@ func trigger_end_game(reason: String):
 	$GameOverLayer/VBoxContainer/TimePlayedLabel.text = "Time: " + format_time_mmss(time_played)
 	$GameOverLayer/VBoxContainer/MaxComboLabel.text   = "Best Combo: x" + str(max_combo)
 	$GameOverLayer.show()
+
+	Global.submit_score(gameplay_mode, score, time_played, max_combo)
 
 	if gameplay_mode == "CLASSIC" and score >= 100:
 		if not "GRAVITY" in unlocked_modes:
@@ -711,8 +771,114 @@ func _on_btn_quit_pressed():
 	if gameplay_mode in ["CLASSIC", "GRAVITY"]:
 		trigger_end_game("LEFT")
 	else:
+		Global.submit_score(gameplay_mode, score, accumulated_time, max_combo)
 		_save_game_state()
 		get_tree().change_scene_to_file("res://main_menu.tscn")
+
+
+func _on_btn_change_level_pressed():
+	if _change_level_layer == null:
+		_build_change_level_panel()
+	_populate_level_list()
+	_change_level_layer.show()
+
+
+func _build_change_level_panel():
+	_change_level_layer = CanvasLayer.new()
+	_change_level_layer.layer = 3
+	add_child(_change_level_layer)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.92)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_change_level_layer.add_child(dim)
+
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 60)
+	margin.add_theme_constant_override("margin_top", 50)
+	margin.add_theme_constant_override("margin_right", 60)
+	margin.add_theme_constant_override("margin_bottom", 50)
+	_change_level_layer.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	margin.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "Change Level"
+	title.add_theme_font_size_override("font_size", 44)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var sep := HSeparator.new()
+	vbox.add_child(sep)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+
+	var list := VBoxContainer.new()
+	list.name = "LevelList"
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 10)
+	scroll.add_child(list)
+
+	var btn_back := Button.new()
+	btn_back.text = "<-- Back"
+	btn_back.add_theme_font_size_override("font_size", 34)
+	btn_back.custom_minimum_size = Vector2(0, 55)
+	btn_back.pressed.connect(func(): _change_level_layer.hide())
+	vbox.add_child(btn_back)
+
+
+func _populate_level_list():
+	var list := _change_level_layer.find_child("LevelList", true, false) as VBoxContainer
+	for child in list.get_children():
+		child.queue_free()
+
+	for i in range(ZenLevels.LEVELS.size()):
+		var lv_data = ZenLevels.LEVELS[i]
+		var lv_id: int = lv_data["id"]
+		var is_unlocked: bool = lv_id in Global.zen_unlocked_levels
+		var is_current: bool = lv_id == Global.zen_current_level
+
+		var btn := Button.new()
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.custom_minimum_size = Vector2(0, 52)
+		btn.add_theme_font_size_override("font_size", 28 if not is_current else 30)
+
+		if is_current:
+			btn.text = "L%d  %s  <--" % [lv_id, lv_data["name"]]
+			btn.add_theme_color_override("font_color", Color.GOLD)
+		elif is_unlocked:
+			btn.text = "L%d  %s" % [lv_id, lv_data["name"]]
+		else:
+			btn.text = "L%d  %s  [%d pts]" % [lv_id, lv_data["name"], lv_data["unlock_score"]]
+			btn.disabled = true
+			btn.modulate = Color(0.5, 0.5, 0.5, 1.0)
+
+		if is_unlocked and not is_current:
+			btn.pressed.connect(_on_level_selected.bind(lv_id))
+
+		list.add_child(btn)
+
+
+func _on_level_selected(lv_id: int):
+	Global.zen_current_level = lv_id
+	_change_level_layer.hide()
+	is_paused = false
+	pause_menu.hide()
+
+	for pos in tiles.keys():
+		if is_instance_valid(tiles[pos]):
+			tiles[pos].queue_free()
+	tiles.clear()
+
+	_spawn_challenge_board()
+	_update_challenge_hud()
+	check_end_game()
 
 
 func _on_btn_restart_over_pressed():
@@ -864,6 +1030,13 @@ func update_gravity_level_ui():
 		gravity_level_label.text = "Lv." + str(gravity_level)
 
 
+func _update_challenge_hud():
+	if gameplay_mode != "CHALLENGE": return
+	var lv := Global.zen_current_level
+	challenge_level_label.text = "L%d %s" % [lv, ZenLevelManager.get_level_name(lv)]
+	challenge_constraint_label.text = ZenLevelManager.get_constraint_text(lv)
+
+
 func update_score_ui():
 	$ScoreLabel.text = "Score: " + str(score)
 
@@ -873,7 +1046,7 @@ func update_score_ui():
 # ==========================================
 func calculate_points(sel_tiles: Array) -> int:
 	var base: int
-	if gameplay_mode in ["ZEN", "MUTATION"]:
+	if gameplay_mode in ["ZEN", "MUTATION", "CHALLENGE"]:
 		var min_x = sel_tiles[0].x; var max_x = sel_tiles[0].x
 		var min_y = sel_tiles[0].y; var max_y = sel_tiles[0].y
 		for pos in sel_tiles:
@@ -956,6 +1129,10 @@ func find_hint_path() -> Array:
 							if tiles.has(p):
 								rect_tiles.append(p)
 					if rect_tiles.size() > 1 and is_valid_sum_10(rect_tiles):
+						if gameplay_mode == "CHALLENGE":
+							var bbox := Rect2i(x1, y1, x2 - x1 + 1, y2 - y1 + 1)
+							if not ZenLevelManager.validate_constraint(bbox, rect_tiles.size(), Global.zen_current_level)["valid"]:
+								continue
 						return rect_tiles
 	return []
 
@@ -1149,7 +1326,7 @@ func _show_time_bonus(seconds: float):
 # SAVE / LOAD (ZEN & MUTATION)
 # ==========================================
 func _save_game_state():
-	if not (gameplay_mode in ["ZEN", "MUTATION"]): return
+	if not (gameplay_mode in ["ZEN", "MUTATION", "CHALLENGE"]): return
 	var tile_list = []
 	for pos in tiles.keys():
 		var t = tiles[pos]
@@ -1164,7 +1341,7 @@ func _save_game_state():
 		"zen_milestone_count": zen_milestone_count,
 		"tiles": tile_list,
 	}
-	if gameplay_mode == "ZEN":
+	if gameplay_mode in ["ZEN", "CHALLENGE"]:
 		save_data["current_level"] = Global.zen_current_level
 		save_data["unlocked_levels"] = Global.zen_unlocked_levels
 	Global.save_game(save_data, gameplay_mode)
@@ -1180,7 +1357,7 @@ func _load_game_state():
 	shuffle_count       = int(data.get("shuffle_count", 1))
 	remove_count        = int(data.get("remove_count", 1))
 	zen_milestone_count = int(data.get("zen_milestone_count", 0))
-	if gameplay_mode == "ZEN":
+	if gameplay_mode in ["ZEN", "CHALLENGE"]:
 		Global.zen_current_level   = int(data.get("current_level", 1))
 		Global.zen_unlocked_levels = data.get("unlocked_levels", [1])
 
@@ -1195,6 +1372,7 @@ func _load_game_state():
 
 	update_score_ui()
 	update_power_up_ui()
+	_update_challenge_hud()
 
 
 # ==========================================
@@ -1218,10 +1396,11 @@ func _init_debug_ui():
 	layer.add_child(panel)
 
 	var button_defs = [
-		{"label": "Time Up",   "method": "_debug_time_up",        "modes": ["CLASSIC", "GRAVITY"]},
-		{"label": "Next Lv",   "method": "_debug_next_level",     "modes": ["GRAVITY"]},
-		{"label": "+200 pts",  "method": "_debug_add_score",      "modes": []},
-		{"label": "Reset PU",  "method": "_debug_reset_powerups", "modes": []},
+		{"label": "Time Up",   "method": "_debug_time_up",                 "modes": ["CLASSIC", "GRAVITY"]},
+		{"label": "Next Lv",   "method": "_debug_next_level",              "modes": ["GRAVITY"]},
+		{"label": "Next Lv",   "method": "_debug_challenge_next_level",    "modes": ["CHALLENGE"]},
+		{"label": "+200 pts",  "method": "_debug_add_score",               "modes": []},
+		{"label": "Reset PU",  "method": "_debug_reset_powerups",          "modes": []},
 	]
 
 	for b in button_defs:
@@ -1261,6 +1440,17 @@ func _debug_next_level():
 	gravity_level = min(gravity_level + 1, 4)
 	update_gravity_level_ui()
 	_show_level_up_banner(gravity_level)
+
+
+func _debug_challenge_next_level():
+	if gameplay_mode != "CHALLENGE": return
+	var next := Global.zen_current_level + 1
+	if next > ZenLevels.LEVELS.size(): return
+	Global.zen_current_level = next
+	if not (next in Global.zen_unlocked_levels):
+		Global.zen_unlocked_levels.append(next)
+	_update_challenge_hud()
+	show_floating_text_center("L%d %s" % [next, ZenLevelManager.get_level_name(next)], Color.GOLD)
 
 
 func _debug_add_score():

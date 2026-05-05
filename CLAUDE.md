@@ -170,6 +170,20 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 - `_check_zen_level_unlock()` trong `main.gd` — unlock level mới khi đủ điểm, hiện badge
 - **Decision:** Constraint Zen bị revert — giữ infrastructure cho **Challenge mode** (T5). Zen về lại đơn giản.
 
+**T5 (2026-05-05)**
+- Challenge Mode đầy đủ: card trong mode select, save/load qua `user://save_challenge.json`
+- `main.gd` xử lý CHALLENGE như ZEN (count-up, pause-aware, refill 100pts, milestone power-up)
+- `scripts/zen_board_generator.gd` — Smart Board Gen: guaranteed solution rect + sparse holes L10-L12
+- Constraint check trong `evaluate_selection()`: sum=10 nhưng sai shape → "Wrong shape!" + reset combo
+- Hint fix: `find_hint_path()` filter constraint → `scan_board_for_valid_moves()` constraint-aware
+- HUD: `ChallengeLevelLabel` + `ChallengeConstraintLabel` + nút "⇄ Levels" trực tiếp trên HUD
+- Pause menu: nút "Change Level" → panel danh sách 12 level (locked/unlocked) → chọn → regen board
+- Debug: nút "Next Lv" trong TEST panel cho CHALLENGE
+- **Highscore** (`highscore.gd/tscn`): top 3 per mode (Classic/Gravity/Mutation/Zen/Challenge)
+  - `Global.submit_score(mode, score, time, max_combo)` → `user://highscore.json`
+  - Gọi trong `trigger_end_game()` (mọi mode) + `_on_btn_quit_pressed()` else branch (Zen/Challenge/Mutation khi Leave)
+  - UI: `ScrollContainer` chứa `HBoxContainer` tab buttons (swipe ngang), content area bên dưới
+
 ---
 
 ## ⚠️ Lưu ý kỹ thuật
@@ -184,7 +198,7 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 
 ---
 
-## 🚧 Feature T5 (tiếp theo) — Challenge Mode
+## ✅ Feature T5 (DONE 2026-05-05) — Challenge Mode
 
 ### Zen Mode Improvements — Level System
 
@@ -498,9 +512,9 @@ const LEVELS = [
 - BGM: 1 track ambient loop (Pixabay)
 - VFX: `GPUParticles2D` khi clear tiles, Tween feedback khi combo tăng
 
-### Highscore screen
-- Hiển thị top score theo từng mode
-- Save vào `user://highscore.json`
+### Highscore screen ✅ (done T5)
+- Top 3 per mode, save `user://highscore.json`
+- Tab bar = `ScrollContainer` + `HBoxContainer` buttons (swipe ngang trên Android)
 
 ---
 
@@ -524,7 +538,7 @@ const LEVELS = [
 | **T2** ✅ | End game logic + Gravity levels | Scan board, popup end game, 3-4 level Gravity |
 | **T3** ✅ | UI overhaul (phần 1) + Tutorial | Main menu, mode select, save/load, tutorial animated |
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
-| **T5** | Challenge mode | Mode mới + constraint gameplay + Smart Board Gen + Hint fix |
+| **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
 | **T6** | Sound + VFX | SFX (jsfxr), BGM (Pixabay), particles, Tween animations |
 | **T7** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
 | **T8** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |

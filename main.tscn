@@ -84,6 +84,13 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "Restart"
 
+[node name="BtnChangeLevel" type="Button" parent="PauseMenuLayer/VBoxContainer" unique_id=1900000020]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Change Level"
+visible = false
+
 [node name="BtnQuit" type="Button" parent="PauseMenuLayer/VBoxContainer" unique_id=1982979111]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
@@ -124,6 +131,34 @@ offset_right = 210.0
 offset_bottom = 132.0
 theme_override_font_sizes/font_size = 26
 text = "Lv.1"
+visible = false
+
+[node name="ChallengeLevelLabel" type="Label" parent="." unique_id=1900000010]
+offset_left = 25.0
+offset_top = 50.0
+offset_right = 460.0
+offset_bottom = 73.0
+theme_override_font_sizes/font_size = 22
+text = "L1 Meadow"
+visible = false
+
+[node name="ChallengeConstraintLabel" type="Label" parent="." unique_id=1900000011]
+offset_left = 25.0
+offset_top = 104.0
+offset_right = 460.0
+offset_bottom = 128.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.6, 0.85, 1.0, 1)
+text = "Select >= 3 tiles"
+visible = false
+
+[node name="BtnChangeLevelHUD" type="Button" parent="." unique_id=1900000012]
+offset_left = 465.0
+offset_top = 50.0
+offset_right = 660.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 20
+text = "⇄ Levels"
 visible = false
 
 [node name="LivesLabel" type="Label" parent="." unique_id=1900000004]
@@ -291,6 +326,7 @@ offset_right = 667.0
 offset_bottom = 49.0
 text = "?"
 
+[connection signal="pressed" from="PauseMenuLayer/VBoxContainer/BtnChangeLevel" to="." method="_on_btn_change_level_pressed"]
 [connection signal="pressed" from="PauseMenuLayer/VBoxContainer/BtnContinue" to="." method="_on_btn_continue_pressed"]
 [connection signal="pressed" from="PauseMenuLayer/VBoxContainer/BtnRestart" to="." method="_on_btn_restart_pressed"]
 [connection signal="pressed" from="PauseMenuLayer/VBoxContainer/BtnQuit" to="." method="_on_btn_quit_pressed"]
@@ -303,3 +339,4 @@ text = "?"
 [connection signal="pressed" from="TutorialLayer/ColorRect/BtnNext" to="." method="_on_btn_next_pressed"]
 [connection signal="pressed" from="TutorialLayer/ColorRect/BtnSkip" to="." method="_on_btn_skip_pressed"]
 [connection signal="pressed" from="BtnHelp" to="." method="_on_btn_help_pressed"]
+[connection signal="pressed" from="BtnChangeLevelHUD" to="." method="_on_btn_change_level_pressed"]

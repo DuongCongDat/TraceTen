@@ -56,3 +56,6 @@ func _on_btn_gravity_pressed():
 
 func _on_btn_mutation_pressed():
 	_start_mode("MUTATION")
+
+func _on_btn_challenge_pressed():
+	_start_mode("CHALLENGE")

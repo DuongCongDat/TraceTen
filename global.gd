@@ -7,8 +7,9 @@ var zen_current_level: int = 1
 var zen_unlocked_levels: Array = [1]
 
 const _SAVE_PATHS = {
-	"ZEN":      "user://save_zen.json",
-	"MUTATION": "user://save_mutation.json",
+	"ZEN":       "user://save_zen.json",
+	"MUTATION":  "user://save_mutation.json",
+	"CHALLENGE": "user://save_challenge.json",
 }
 
 func has_save(mode: String) -> bool:
@@ -38,3 +39,30 @@ func get_save_preview(mode: String) -> Dictionary:
 		"score": data.get("score", 0),
 		"time": data.get("accumulated_time", 0.0),
 	}
+
+# ── HIGHSCORE ──────────────────────────────────────────────
+const HIGHSCORE_PATH = "user://highscore.json"
+const HIGHSCORE_TOP = 3
+
+func load_highscore() -> Dictionary:
+	if not FileAccess.file_exists(HIGHSCORE_PATH): return {}
+	var file = FileAccess.open(HIGHSCORE_PATH, FileAccess.READ)
+	if not file: return {}
+	var parsed = JSON.parse_string(file.get_as_text())
+	return parsed if parsed is Dictionary else {}
+
+func save_highscore(data: Dictionary):
+	var file = FileAccess.open(HIGHSCORE_PATH, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(data))
+
+func submit_score(mode: String, score: int, time_played: float, max_combo: int):
+	var data = load_highscore()
+	if not data.has(mode):
+		data[mode] = []
+	var entry = {"score": score, "time": time_played, "max_combo": max_combo}
+	data[mode].append(entry)
+	data[mode].sort_custom(func(a, b): return a["score"] > b["score"])
+	if data[mode].size() > HIGHSCORE_TOP:
+		data[mode] = data[mode].slice(0, HIGHSCORE_TOP)
+	save_highscore(data)
