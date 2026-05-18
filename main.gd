@@ -37,6 +37,7 @@ var gravity_level = 1
 var gravity_l4_dir = "DOWN"
 const GRAVITY_LEVEL_SCORE = 50  # score needed to advance each level
 const GRAVITY_TIME_PER_TILE = 1.0  # +seconds per tile eaten in Gravity mode
+const VIRUS_SPREAD_PENALTY = 10
 
 # --- DEBUG ---
 const DEBUG_MODE = true
@@ -718,11 +719,73 @@ func _apply_gravity_horizontal(fall_right: bool):
 # VIRUS
 # ==========================================
 func kill_tile_from_virus(pos: Vector2):
-	if tiles.has(pos):
-		tiles[pos].queue_free()
-		tiles.erase(pos)
-		print("Virus exploded at ", pos)
-		Global.unlock_achievement("virus_explode")
+	if not tiles.has(pos):
+		return
+
+	Global.unlock_achievement("virus_explode")
+
+	# Original virus stays: re-roll value + reset timer
+	var virus_tile = tiles[pos]
+	virus_tile.value = randi_range(1, 9)
+	virus_tile.virus_timer = 0.0
+	virus_tile.update_visuals()
+	var ns = _tile_normal_scale()
+	var vt = create_tween()
+	vt.tween_property(virus_tile, "scale", ns * 1.35, 0.1)
+	vt.tween_property(virus_tile, "scale", ns, 0.1)
+
+	# Find adjacent non-virus tiles to infect
+	var candidates: Array = []
+	for dir in [Vector2(0, -1), Vector2(0, 1), Vector2(-1, 0), Vector2(1, 0)]:
+		var adj = pos + dir
+		if tiles.has(adj) and tiles[adj].tile_type != "VIRUS":
+			candidates.append(adj)
+
+	if candidates.size() > 0:
+		var target: Vector2 = candidates[randi() % candidates.size()]
+		tiles[target].queue_free()
+		tiles.erase(target)
+		var new_virus = TileFactory.make("VIRUS")
+		new_virus.position = start_pos + Vector2(target.x * tile_size, target.y * tile_size)
+		new_virus.scale = _tile_normal_scale()
+		add_child(new_virus)
+		new_virus.set_data(target, randi_range(1, 9), "VIRUS")
+		tiles[target] = new_virus
+
+	# Penalty always applies
+	score = max(0, score - VIRUS_SPREAD_PENALTY)
+	update_score_ui()
+	_show_virus_penalty(virus_tile.position)
+	_flash_screen_virus()
+
+
+func _show_virus_penalty(pixel_pos: Vector2):
+	var label = Label.new()
+	label.text = "-%d" % VIRUS_SPREAD_PENALTY
+	label.add_theme_font_size_override("font_size", 54)
+	label.add_theme_color_override("font_color", Color.RED)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.size = Vector2(120, 60)
+	label.position = pixel_pos - Vector2(60, 30)
+	add_child(label)
+	var tween = create_tween()
+	tween.tween_property(label, "position", label.position - Vector2(0, 90), 0.8).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.8)
+	tween.tween_callback(label.queue_free)
+
+
+func _flash_screen_virus():
+	var flash = ColorRect.new()
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.color = Color(0, 0, 0, 0)
+	add_child(flash)
+	var tween = create_tween()
+	tween.tween_property(flash, "color", Color(0.85, 0, 0, 0.5), 0.07)
+	tween.tween_property(flash, "color", Color(0, 0, 0, 0.55), 0.07)
+	tween.tween_property(flash, "color", Color(0.85, 0, 0, 0.35), 0.07)
+	tween.tween_property(flash, "color", Color(0, 0, 0, 0.0), 0.18)
+	tween.tween_callback(flash.queue_free)
 
 
 # ==========================================

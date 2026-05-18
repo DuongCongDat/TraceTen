@@ -15,13 +15,12 @@ func _process(delta):
 	var p = randf()
 	if p <= 0.65:
 		value = randi_range(1, 9)
-		#value = 0 test
 	elif p <= 0.95:
 		value = randi_range(-5, -1)
-	elif p <= 0.99:
+	elif p <= 0.997:
 		value = randi_range(-9, -6)
 	else:
-		value = 0
+		value = 0  # 0.3% chance — triggers spread + penalty
 
 	if value == 0:
 		if get_parent().has_method("kill_tile_from_virus"):
