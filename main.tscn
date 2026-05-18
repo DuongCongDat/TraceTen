@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ddxc2u1pwbh8j"]
 
 [ext_resource type="Script" uid="uid://bm8r8mcyepk04" path="res://main.gd" id="1_ig7tw"]
+[ext_resource type="PackedScene" path="res://achievement_popup.tscn" id="2_achpop"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_ig7tw"]
 font_size = 45
@@ -340,3 +341,5 @@ text = "?"
 [connection signal="pressed" from="TutorialLayer/ColorRect/BtnSkip" to="." method="_on_btn_skip_pressed"]
 [connection signal="pressed" from="BtnHelp" to="." method="_on_btn_help_pressed"]
 [connection signal="pressed" from="BtnChangeLevelHUD" to="." method="_on_btn_change_level_pressed"]
+
+[node name="AchievementPopup" parent="." instance=ExtResource("2_achpop")]

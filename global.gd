@@ -6,6 +6,15 @@ var load_save = false  # set true from mode_select when user picks "Continue"
 var zen_current_level: int = 1
 var zen_unlocked_levels: Array = [1]
 
+# ── ACHIEVEMENT STATE ──────────────────────────────────────
+signal achievement_unlocked(id: String)
+
+const ACHIEVEMENT_PATH = "user://achievements.json"
+
+var _achievements: Dictionary = {}  # {id: {unlocked, progress}}
+var modes_played: Array = []        # persisted — for "all_modes" achievement
+var hints_used_this_game: int = 0   # reset each game — for "no_hint" achievement
+
 const _SAVE_PATHS = {
 	"ZEN":       "user://save_zen.json",
 	"MUTATION":  "user://save_mutation.json",
@@ -55,6 +64,65 @@ func save_highscore(data: Dictionary):
 	var file = FileAccess.open(HIGHSCORE_PATH, FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(data))
+
+func _ready():
+	load_achievements()
+
+func load_achievements():
+	_achievements = {}
+	modes_played = []
+	if not FileAccess.file_exists(ACHIEVEMENT_PATH):
+		return
+	var file = FileAccess.open(ACHIEVEMENT_PATH, FileAccess.READ)
+	if not file:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if not parsed is Dictionary:
+		return
+	modes_played = parsed.get("_modes_played", [])
+	parsed.erase("_modes_played")
+	_achievements = parsed
+
+func save_achievements():
+	var data = _achievements.duplicate()
+	data["_modes_played"] = modes_played
+	var file = FileAccess.open(ACHIEVEMENT_PATH, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(data))
+
+func _get_entry(id: String) -> Dictionary:
+	if not _achievements.has(id):
+		_achievements[id] = {"unlocked": false, "progress": 0}
+	return _achievements[id]
+
+func unlock_achievement(id: String):
+	var entry = _get_entry(id)
+	if entry["unlocked"]:
+		return
+	entry["unlocked"] = true
+	_achievements[id] = entry
+	save_achievements()
+	achievement_unlocked.emit(id)
+
+func update_achievement_progress(id: String, value: int):
+	var entry = _get_entry(id)
+	if entry["unlocked"]:
+		return
+	entry["progress"] = value
+	_achievements[id] = entry
+	var def = AchievementData.get_def(id)
+	if not def.is_empty() and value >= def.get("target", 1):
+		unlock_achievement(id)
+	else:
+		save_achievements()
+
+func track_mode_played(mode: String):
+	if mode in modes_played:
+		return
+	modes_played.append(mode)
+	update_achievement_progress("all_modes", modes_played.size())
+
+# ── HIGHSCORE ──────────────────────────────────────────────
 
 func submit_score(mode: String, score: int, time_played: float, max_combo: int):
 	var data = load_highscore()

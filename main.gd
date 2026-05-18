@@ -47,6 +47,9 @@ const ZEN_REFILL_MILESTONE = 100
 
 var current_mode = "RECTANGLE"
 
+# --- ACHIEVEMENT TRACKING (per-game, reset in setup_mode_config) ---
+var _mutation_types_cleared: Array = []
+
 var unlocked_modes = ["CLASSIC"]
 var seen_tutorials = {
 	"CLASSIC": false,
@@ -153,6 +156,9 @@ func setup_mode_config():
 	gravity_level      = 1
 	gravity_l4_dir     = "DOWN"
 	zen_milestone_count = 0
+	Global.hints_used_this_game = 0
+	_mutation_types_cleared = []
+	Global.track_mode_played(gameplay_mode)
 
 	match gameplay_mode:
 		"GRAVITY":
@@ -395,6 +401,40 @@ func evaluate_selection():
 		if combo_count > max_combo:
 			max_combo = combo_count
 
+		# ── Achievement: score ──
+		Global.unlock_achievement("first_ten")
+		Global.update_achievement_progress("score_100", score)
+		Global.update_achievement_progress("score_500", score)
+		Global.update_achievement_progress("score_1000", score)
+
+		# ── Achievement: combo ──
+		if combo_count >= 2:
+			Global.unlock_achievement("first_combo")
+		if combo_count >= 5:
+			Global.unlock_achievement("combo_5")
+			if gameplay_mode == "CLASSIC":
+				Global.unlock_achievement("combo_classic")
+		if combo_count >= 10:
+			Global.unlock_achievement("combo_10")
+
+		# ── Achievement: tile types (check before freeing tiles) ──
+		if selected_tiles.size() >= 20:
+			Global.unlock_achievement("big_selection")
+		if has_joker:
+			Global.unlock_achievement("joker_used")
+		for pos in selected_tiles:
+			var _t = tiles[pos]
+			match _t.tile_type:
+				"NEGATIVE":
+					Global.unlock_achievement("negative_win")
+				"VIRUS":
+					Global.unlock_achievement("virus_cleared")
+			if gameplay_mode == "MUTATION" and _t.tile_type in ["JOKER", "NEGATIVE", "MYSTERY", "VIRUS"]:
+				if _t.tile_type not in _mutation_types_cleared:
+					_mutation_types_cleared.append(_t.tile_type)
+					if _mutation_types_cleared.size() >= 4:
+						Global.unlock_achievement("mutation_alltype")
+
 		var eaten_count = selected_tiles.size()  # capture before clear
 
 		for pos in selected_tiles:
@@ -449,6 +489,8 @@ func _check_zen_milestone():
 		remove_count  += 1
 		show_floating_text_center("Power-up +1!", Color.LIME_GREEN)
 		update_power_up_ui()
+		if gameplay_mode == "ZEN":
+			Global.update_achievement_progress("zen_refill3", zen_milestone_count)
 	_check_zen_level_unlock()
 
 
@@ -462,6 +504,11 @@ func _check_zen_level_unlock():
 		Global.zen_unlocked_levels.append(next_level)
 		var level_name = ZenLevelManager.get_level_name(next_level)
 		show_floating_text_center("L%d %s unlocked!" % [next_level, level_name], Color.GOLD)
+		if gameplay_mode == "CHALLENGE":
+			if next_level == 6:
+				Global.unlock_achievement("challenge_l6")
+			if next_level == 12:
+				Global.unlock_achievement("challenge_l12")
 
 
 # ==========================================
@@ -505,6 +552,14 @@ func trigger_end_game(reason: String):
 
 	Global.submit_score(gameplay_mode, score, time_played, max_combo)
 
+	# ── Achievement: Classic end-game ──
+	if gameplay_mode == "CLASSIC":
+		var time_remaining = total_duration - time_played
+		if time_remaining >= 60.0:
+			Global.unlock_achievement("classic_survive")
+		if Global.hints_used_this_game == 0:
+			Global.unlock_achievement("no_hint")
+
 	if gameplay_mode == "CLASSIC" and score >= 100:
 		if not "GRAVITY" in unlocked_modes:
 			unlocked_modes.append("GRAVITY")
@@ -528,6 +583,11 @@ func check_gravity_level_up():
 			gravity_l4_dir = dirs[randi() % dirs.size()]
 		update_gravity_level_ui()
 		_show_level_up_banner(gravity_level)
+		# ── Achievement: gravity levels ──
+		if gravity_level == 4:
+			Global.unlock_achievement("gravity_lv4")
+		if gravity_level >= 3 and shuffle_count == 3:
+			Global.unlock_achievement("gravity_3lives")
 
 
 func _show_level_up_banner(level: int):
@@ -662,6 +722,7 @@ func kill_tile_from_virus(pos: Vector2):
 		tiles[pos].queue_free()
 		tiles.erase(pos)
 		print("Virus exploded at ", pos)
+		Global.unlock_achievement("virus_explode")
 
 
 # ==========================================
@@ -923,6 +984,8 @@ func _on_btn_hint_pressed():
 
 	hint_count -= 1
 	update_power_up_ui()
+	Global.hints_used_this_game += 1
+	Global.unlock_achievement("first_powerup")
 
 	var found_path = find_hint_path()
 	if found_path.size() > 0:
@@ -944,6 +1007,7 @@ func _on_btn_shuffle_pressed():
 	if shuffle_count <= 0 or tiles.is_empty(): return
 
 	shuffle_count -= 1
+	Global.unlock_achievement("first_powerup")
 
 	if gameplay_mode == "GRAVITY":
 		update_lives_ui()
@@ -977,11 +1041,13 @@ func _on_btn_remove_pressed():
 	if is_remove_mode:
 		is_remove_mode = false
 		update_power_up_ui()
+		Global.unlock_achievement("cancel_remove")
 		return
 
 	if remove_count <= 0: return
 	is_remove_mode = true
 	update_power_up_ui()
+	Global.unlock_achievement("first_powerup")
 
 
 # ==========================================

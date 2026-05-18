@@ -75,20 +75,20 @@ Threshold 0.3 — tinh chỉnh khi playtest.
 ```
 1. Tính tổng effective_value của selected_tiles
 2. Nếu có JOKER:
-     needed = 10 - total
-     if needed trong [-9, 9]: total = 10
-     else: total = 999, show "OVERLOAD"
+	 needed = 10 - total
+	 if needed trong [-9, 9]: total = 10
+	 else: total = 999, show "OVERLOAD"
 3. Nếu total == 10:
-     a. [CHALLENGE only] Tính bbox, gọi ZenLevelManager.validate_constraint()
-        → fail: reset combo, show "Wrong shape!", clear selection, return
-     b. calculate_points() → cộng score
-     c. Cập nhật combo (real clock)
-     d. Remove tiles khỏi board
-     e. [GRAVITY] apply gravity + check level up
-     f. [ZEN/CHALLENGE] check milestone refill (100pts)
-     g. scan_board_for_valid_moves() → nếu false + hết power-up → trigger_end_game("NO_MOVES")
+	 a. [CHALLENGE only] Tính bbox, gọi ZenLevelManager.validate_constraint()
+		→ fail: reset combo, show "Wrong shape!", clear selection, return
+	 b. calculate_points() → cộng score
+	 c. Cập nhật combo (real clock)
+	 d. Remove tiles khỏi board
+	 e. [GRAVITY] apply gravity + check level up
+	 f. [ZEN/CHALLENGE] check milestone refill (100pts)
+	 g. scan_board_for_valid_moves() → nếu false + hết power-up → trigger_end_game("NO_MOVES")
 4. Nếu total != 10:
-     reset combo
+	 reset combo
 ```
 
 ---
@@ -102,12 +102,12 @@ Threshold 0.3 — tinh chỉnh khi playtest.
 # Duyệt tất cả cặp (x1,y1)→(x2,y2) tạo thành hình chữ nhật
 for x1 in range(min_x, max_x+1):
   for y1 in range(min_y, max_y+1):
-    for x2 in range(x1, max_x+1):
-      for y2 in range(y1, max_y+1):
-        rect_tiles = [pos trong tiles.keys() mà x1≤x≤x2 và y1≤y≤y2]
-        if rect_tiles.size() > 1 and is_valid_sum_10(rect_tiles):
-          [CHALLENGE] validate_constraint → bỏ qua nếu sai shape
-          return rect_tiles  ← early-exit ngay khi tìm được
+	for x2 in range(x1, max_x+1):
+	  for y2 in range(y1, max_y+1):
+		rect_tiles = [pos trong tiles.keys() mà x1≤x≤x2 và y1≤y≤y2]
+		if rect_tiles.size() > 1 and is_valid_sum_10(rect_tiles):
+		  [CHALLENGE] validate_constraint → bỏ qua nếu sai shape
+		  return rect_tiles  ← early-exit ngay khi tìm được
 ```
 
 `scan_board_for_valid_moves()` reuse `find_hint_path()`, chỉ kiểm tra có tồn tại hay không.

@@ -9,6 +9,9 @@ func _on_btn_play_pressed():
 func _on_btn_highscore_pressed():
 	get_tree().change_scene_to_file("res://highscore.tscn")
 
+func _on_btn_achievements_pressed():
+	get_tree().change_scene_to_file("res://achievement_screen.tscn")
+
 func _on_btn_help_pressed():
 	get_tree().change_scene_to_file("res://tutorial.tscn")
 

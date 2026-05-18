@@ -184,6 +184,16 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
   - Gọi trong `trigger_end_game()` (mọi mode) + `_on_btn_quit_pressed()` else branch (Zen/Challenge/Mutation khi Leave)
   - UI: `ScrollContainer` chứa `HBoxContainer` tab buttons (swipe ngang), content area bên dưới
 
+**T6 (2026-05-18)**
+- **Achievement System** — 25 thành tựu, 6 category (Beginner, Score, Combo, Mode, Special Tiles, Quirky)
+- `data/achievements.gd` — `AchievementData.LIST` config 25 entry (id, name, desc, target); `get_def(id)`
+- `global.gd` — `unlock_achievement(id)`, `update_achievement_progress(id, value)`, `load/save_achievements()`; signal `achievement_unlocked(id)`; `track_mode_played(mode)` cho `all_modes`
+- Save: `user://achievements.json` — key `_modes_played` lưu chung trong cùng file
+- Per-game tracking: `Global.hints_used_this_game` (reset mỗi game) + `_mutation_types_cleared` (local main.gd)
+- Trigger: 25 hook trải đều trong `evaluate_selection()`, `trigger_end_game()`, `check_gravity_level_up()`, `_check_zen_milestone()`, `_check_zen_level_unlock()`, `_on_btn_*_pressed()`, `tile_mystery.gd:select()`, `kill_tile_from_virus()`
+- **Notification popup** (`achievement_popup.gd/tscn`): `CanvasLayer` layer=10, queue nhiều unlock liên tiếp, slide-in từ phải 0.3s → đứng 2.5s → fade out; connect signal trong `_ready()`; add vào `main.tscn`
+- **Achievement screen** (`achievement_screen.gd/tscn`): danh sách 25 thành tựu chia category, icon ★/○, progress "X/Y" cho target>1, dim 60% khi locked; nút Achievements thêm vào main menu giữa Highscore và Help
+
 ---
 
 ## ⚠️ Lưu ý kỹ thuật
@@ -518,12 +528,88 @@ const LEVELS = [
 
 ---
 
+## 🏅 Hệ thống Thành tựu (Achievement System)
+
+**✅ Done T6 (2026-05-18)**
+
+### Files
+
+| File | Vai trò |
+|------|---------|
+| `data/achievements.gd` | Config 25 thành tựu (`AchievementData.LIST`, `get_def(id)`) |
+| `achievement_popup.gd/tscn` | Notification popup — `CanvasLayer` layer 10, queue, slide+fade |
+| `achievement_screen.gd/tscn` | Màn danh sách 25 thành tựu, 6 category |
+
+### Lưu ý kỹ thuật
+
+- **Signal:** `Global.achievement_unlocked(id)` — popup connect trong `_ready()`, không cần wire thủ công
+- **`unlock_achievement()` idempotent** — gọi bao nhiêu lần cũng an toàn, chỉ emit signal lần đầu
+- **`update_achievement_progress(id, value)` tự unlock** khi `value >= target` — không cần gọi `unlock_achievement()` riêng
+- **`hints_used_this_game`** reset trong `setup_mode_config()` — dùng cho achievement `no_hint` (Classic)
+- **`_mutation_types_cleared`** là local var trong `main.gd`, reset trong `setup_mode_config()` — track 4 loại tile Mutation
+- **`_modes_played`** lưu bền vững trong `achievements.json` (key `_modes_played`) — track qua nhiều session cho `all_modes`
+- **Popup queue:** nhiều achievement unlock cùng lúc → hiện lần lượt, không chồng, không mất
+
+**Cần thêm tracking trong Global:** `modes_played[]`, `total_hints_used`, `total_cancels_remove`, `virus_exploded_once`.
+
+### Danh sách 25 Thành tựu
+
+#### 🟢 Beginner
+| ID | Tên | Điều kiện |
+|----|-----|-----------|
+| `first_ten` | Hello, Ten! | Ghi điểm lần đầu tiên |
+| `first_powerup` | Helping Hand | Dùng power-up lần đầu |
+| `all_modes` | Explorer | Chơi thử cả 5 mode |
+| `first_combo` | On a Roll | Đạt combo x2 lần đầu |
+| `first_special` | What's This? | Chạm vào ô Mystery lần đầu |
+
+#### 🏆 Score (single game)
+| ID | Tên | Điều kiện |
+|----|-----|-----------|
+| `score_100` | Century | Đạt 100 điểm trong 1 game |
+| `score_500` | High Roller | Đạt 500 điểm trong 1 game |
+| `score_1000` | Four Digits | Đạt 1000 điểm trong 1 game |
+
+#### ⚡ Combo
+| ID | Tên | Điều kiện |
+|----|-----|-----------|
+| `combo_5` | Pentagram | Đạt x5 combo |
+| `combo_10` | Unstoppable | Đạt x10 combo |
+| `combo_classic` | Speed Demon | Đạt x5 combo trong Classic |
+
+#### 🎮 Mode-specific
+| ID | Tên | Điều kiện | Mode |
+|----|-----|-----------|------|
+| `classic_survive` | Against the Clock | Kết thúc Classic còn ≥ 60s | Classic |
+| `gravity_lv4` | Gravitational Pull | Lên Level 4 trong Gravity | Gravity |
+| `gravity_3lives` | Untouchable | Đến Level 3 mà không mất mạng | Gravity |
+| `zen_refill3` | Zen Garden | Trigger milestone refill 3 lần (300 điểm) | Zen |
+| `challenge_l6` | Cube Master | Unlock Level 6 Challenge (3×3 square) | Challenge |
+| `challenge_l12` | Cosmos | Unlock Level 12 Challenge | Challenge |
+| `mutation_alltype` | Collector | Dọn được cả 4 loại ô đặc biệt trong 1 game | Mutation |
+
+#### 🦠 Special Tiles
+| ID | Tên | Điều kiện |
+|----|-----|-----------|
+| `virus_cleared` | Defused | Dọn Virus trước khi nổ |
+| `joker_used` | Wild Card | Dùng Joker thành công |
+| `negative_win` | Glass Half Empty | Dùng ô âm để balance tổng = 10 |
+
+#### 🎲 Quirky / Secret
+| ID | Tên | Điều kiện |
+|----|-----|-----------|
+| `big_selection` | Hoarder | Chọn vùng ≥ 20 ô trong 1 nước |
+| `no_hint` | I Don't Need Help | Hoàn thành Classic không dùng Hint lần nào |
+| `cancel_remove` | Never Mind | Cancel Remove mode (bấm Remove lần 2) |
+| `virus_explode` | Oops | Để Virus nổ lần đầu |
+
+---
+
 ## 💡 Future Work (KHÔNG làm trong scope đồ án)
 
 - Ô đặc biệt tạo từ ghép ô (Candy Crush style)
 - Cải thiện cơ chế Shuffle
 - Online leaderboard
-- Achievement system
 - Tutorial interactive
 
 ---
@@ -539,13 +625,14 @@ const LEVELS = [
 | **T3** ✅ | UI overhaul (phần 1) + Tutorial | Main menu, mode select, save/load, tutorial animated |
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
 | **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
-| **T6** | Sound + VFX | SFX (jsfxr), BGM (Pixabay), particles, Tween animations |
-| **T7** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
-| **T8** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
-| **T9** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |
+| **T6** ✅ | Achievement System | 25 thành tựu, `Global.unlock_achievement()`, notification popup, Achievement screen |
+| **T7** | Sound + VFX + UI Polish | SFX (jsfxr), BGM (Pixabay), particles, Tween animations; fix button sizes (Pause/Help/powerup); theme nhất quán |
+| **T8** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
+| **T9** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
+| **T10** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |
 
 ### Quy tắc bất di bất dịch
-- **Sau tuần 6: KHÔNG thêm feature mới**
+- **Sau tuần 7: KHÔNG thêm feature mới**
 - **Tuần 8-9: KHÔNG động vào code** (trừ bug crash)
 - Mỗi tuần kết thúc → **tag git** (`v0.1`, `v0.2`...)
 - **Tuần 7:** APK build phải chạy ổn định trên ít nhất 1 thiết bị thật
