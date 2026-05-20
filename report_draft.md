@@ -12,6 +12,7 @@
 - [x] Section 3 — Special Tiles & Power-up System — 2026-05-13
 - [x] Section 4 — Scoring System (calculate_points, density rule, combo, end-game, scan algorithm) — 2026-05-13
 - [x] Section 5 — Analysis & Design (Use Case, architecture, class hierarchy, algorithms) — 2026-05-18
+- [x] Section 5.6 — Audio & Visual Feedback (AudioManager, SFX, VFX) — 2026-05-20
 - [x] Section 6 — Conclusion & Future Work (draft) — 2026-05-18
 
 ### Còn thiếu
@@ -476,6 +477,43 @@ Random fill does not guarantee a valid move satisfying the Challenge constraint 
 
 This guarantees at least one valid move on every generated board without any retry loop.
 
+### 5.6 Audio and Visual Feedback
+
+Game feel ("juice") relies on immediate audio-visual responses to every player action. TraceTen implements this through two lightweight systems that add no gameplay logic.
+
+#### AudioManager (AutoLoad Singleton)
+
+A custom `AudioManager` node (`scripts/audio_manager.gd`) is registered as a Godot AutoLoad singleton so that any script in any scene can call `AudioManager.play_sfx(id, pitch, volume_db)` without holding a reference to a specific node.
+
+Internally, the manager maintains a **pool of eight `AudioStreamPlayer` nodes**. On each `play_sfx` call the next player in the pool is selected (round-robin), its stream, pitch, and volume are set, and playback begins. The pool prevents sounds from cutting each other off during rapid-fire events such as clearing a large selection with combo multiplier active.
+
+Eleven sound effects cover the main interaction events:
+
+| ID | Trigger |
+|----|---------|
+| `score` | Tile selection cleared successfully |
+| `combo` | Combo count increases |
+| `wrong` | Wrong sum or wrong shape |
+| `powerup_use` | Hint or Remove activated |
+| `powerup_gain` | Zen/Challenge milestone refill |
+| `shuffle` | Shuffle activated |
+| `tile_remove` | Single tile removed via Remove power-up |
+| `virus_explode` | Virus spreads and resets |
+| `gameover` | Game over triggered |
+| `achievement` | Achievement unlocked |
+| `level_up` | Gravity level increases |
+
+All sounds were generated with **jsfxr** (an open-source procedural SFX generator) and exported as `.ogg` files. The `score` sound's pitch scales with combo count (`1.0 + (combo − 1) × 0.05`) to provide subtle audio feedback for streaks without requiring separate files.
+
+#### Visual Feedback (VFX)
+
+Three Tween-based effects and one particle system reinforce action outcomes:
+
+- **Tile clear burst**: On successful selection, a `CPUParticles2D` node is spawned at each cleared tile's position. Particles are coloured by tile type (white for normal, red for Negative, green-yellow for Virus, gold for Joker) and auto-freed via the `finished` signal. `CPUParticles2D` is used instead of `GPUParticles2D` for better compatibility with low-end Android hardware.
+- **Wrong flash**: On incorrect selection (wrong sum or wrong Challenge shape), each selected tile's `modulate` property is tweened red twice (0.07 s per step) before deselect — a stronger signal than simply resetting selection.
+- **Score float**: The floating score label scales from 55 px to 75 px font size as combo increases (`min(55 + (combo − 1) × 5, 75)`), and changes colour from white → yellow → orange-red at combo thresholds of x2 and x4.
+- **Combo bounce**: The `ComboLabel` plays a scale tween (1.0 → 1.3 → 1.0 in 160 ms) each time the combo count updates.
+
 ---
 
 ## 6. Conclusion and Future Work
@@ -496,7 +534,7 @@ The project was developed in approximately ten weeks using Godot 4 and GDScript,
 
 - **Performance on low-end devices**: the O(n⁴) scan is called on discrete events and has early exit, but has not been benchmarked on low-end Android hardware. A future optimisation could cache valid-move sets and invalidate incrementally.
 - **UI polish**: button sizes and visual theme were intentionally deferred to a later sprint. The current interface is functional but not visually refined.
-- **No sound**: audio (SFX and background music) is planned for a subsequent sprint and is absent in the current build.
+- **No background music**: SFX is implemented; an ambient BGM loop is planned but not yet added.
 - **Single-language UI**: all in-game text is English; localisation was not in scope.
 
 ### 6.3 Future Work
@@ -505,7 +543,7 @@ Several directions were identified during development but deferred outside the p
 
 | Feature | Notes |
 |---------|-------|
-| Sound & VFX | SFX via jsfxr; ambient BGM loop; `GPUParticles2D` on tile clear; Tween feedback on combo |
+| Background music | Ambient BGM loop (Pixabay CC0) planned; SFX and particle VFX already implemented |
 | UI polish | Custom font (Google Fonts), consistent colour theme per mode, responsive HUD using Containers |
 | Online leaderboard | Currently local-only; a lightweight backend (e.g. Firebase) would enable global ranking |
 | Interactive tutorial | Current tutorial is animated but non-interactive; a guided first-game would lower the learning curve |

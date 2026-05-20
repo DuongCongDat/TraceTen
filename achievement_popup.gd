@@ -32,6 +32,7 @@ func _show_next():
 	var name_text = _queue.pop_front()
 	label.text = "Achievement!\n" + name_text
 
+	AudioManager.play_sfx("achievement")
 	# Slide in from right
 	var target_x = get_viewport().get_visible_rect().size.x - panel.size.x - 16.0
 	panel.position.x = get_viewport().get_visible_rect().size.x

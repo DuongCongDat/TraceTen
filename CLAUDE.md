@@ -626,7 +626,7 @@ const LEVELS = [
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
 | **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
 | **T6** ✅ | Achievement System | 25 thành tựu, `Global.unlock_achievement()`, notification popup, Achievement screen |
-| **T7** | Sound + VFX + UI Polish | SFX (jsfxr), BGM (Pixabay), particles, Tween animations; fix button sizes (Pause/Help/powerup); theme nhất quán |
+| **T7** ⏳ | Sound + VFX + UI Polish | ✅ SFX: `AudioManager` pool 8 player, 11 SFX hooked; ✅ VFX: tile burst `CPUParticles2D`, combo bounce, wrong flash, score float; ⏳ UI Polish (button sizes, font, theme); ⏳ BGM |
 | **T8** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
 | **T9** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
 | **T10** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |

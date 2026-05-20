@@ -270,6 +270,7 @@ func handle_rectangle_input(event):
 
 			if is_remove_mode:
 				if is_within_grid(touch_grid) and tiles.has(touch_grid):
+					AudioManager.play_sfx("tile_remove")
 					tiles[touch_grid].queue_free()
 					tiles.erase(touch_grid)
 					is_remove_mode = false
@@ -377,6 +378,8 @@ func evaluate_selection():
 			if not c_result["valid"]:
 				combo_count = 1
 				update_combo_ui()
+				AudioManager.play_sfx("wrong")
+				_flash_wrong_tiles()
 				show_floating_text_center("Wrong shape!", Color.ORANGE_RED)
 				await get_tree().create_timer(0.3).timeout
 				for pos in selected_tiles:
@@ -388,12 +391,14 @@ func evaluate_selection():
 		var points_earned = calculate_points(selected_tiles)
 		score += points_earned
 		update_score_ui()
+		AudioManager.play_sfx("score", 1.0 + (combo_count - 1) * 0.05)
 		show_floating_score(points_earned, used_combo)
 
 		# Combo applies to ALL modes using real-time clock
 		var now = Time.get_unix_time_from_system()
 		if last_score_time > 0 and now - last_score_time <= COMBO_TIMEOUT:
 			combo_count += 1
+			AudioManager.play_sfx("combo", 1.0, -6.0)
 		else:
 			combo_count = 1
 		last_score_time = now
@@ -440,6 +445,7 @@ func evaluate_selection():
 
 		for pos in selected_tiles:
 			if tiles.has(pos):
+				_spawn_tile_burst(tiles[pos].position, tiles[pos].tile_type)
 				tiles[pos].queue_free()
 				tiles.erase(pos)
 
@@ -473,6 +479,8 @@ func evaluate_selection():
 				await get_tree().create_timer(0.5).timeout
 				check_end_game()
 	else:
+		AudioManager.play_sfx("wrong")
+		_flash_wrong_tiles()
 		await get_tree().create_timer(0.3).timeout
 		for pos in selected_tiles:
 			if tiles.has(pos):
@@ -488,6 +496,7 @@ func _check_zen_milestone():
 		hint_count   += 1
 		shuffle_count += 1
 		remove_count  += 1
+		AudioManager.play_sfx("powerup_gain")
 		show_floating_text_center("Power-up +1!", Color.LIME_GREEN)
 		update_power_up_ui()
 		if gameplay_mode == "ZEN":
@@ -529,6 +538,7 @@ func check_end_game():
 func trigger_end_game(reason: String):
 	if is_game_over: return
 	is_game_over = true
+	AudioManager.play_sfx("gameover", 1.0, -15.0)
 	Global.delete_save(gameplay_mode)
 
 	var reason_text: String
@@ -592,6 +602,7 @@ func check_gravity_level_up():
 
 
 func _show_level_up_banner(level: int):
+	AudioManager.play_sfx("level_up")
 	var dir_text = {2: "RIGHT  →", 3: "←  LEFT", 4: "RANDOM  ↯"}
 	var colors   = {
 		2: Color(0.25, 0.88, 1.0),
@@ -723,6 +734,7 @@ func kill_tile_from_virus(pos: Vector2):
 		return
 
 	Global.unlock_achievement("virus_explode")
+	AudioManager.play_sfx("virus_explode")
 
 	# Original virus stays: re-roll value + reset timer
 	var virus_tile = tiles[pos]
@@ -743,14 +755,14 @@ func kill_tile_from_virus(pos: Vector2):
 
 	if candidates.size() > 0:
 		var target: Vector2 = candidates[randi() % candidates.size()]
-		tiles[target].queue_free()
-		tiles.erase(target)
-		var new_virus = TileFactory.make("VIRUS")
-		new_virus.position = start_pos + Vector2(target.x * tile_size, target.y * tile_size)
-		new_virus.scale = _tile_normal_scale()
-		add_child(new_virus)
-		new_virus.set_data(target, randi_range(1, 9), "VIRUS")
-		tiles[target] = new_virus
+		var infect_tile = tiles[target]
+		infect_tile.set_script(TileFactory.SCRIPTS["VIRUS"])
+		infect_tile.set_process(true)
+		infect_tile.tile_type = "VIRUS"
+		infect_tile.value = randi_range(1, 9)
+		infect_tile.virus_timer = 0.0
+		infect_tile.is_selected = false
+		infect_tile.update_visuals()
 
 	# Penalty always applies
 	score = max(0, score - VIRUS_SPREAD_PENALTY)
@@ -897,6 +909,7 @@ func _on_btn_quit_pressed():
 	else:
 		Global.submit_score(gameplay_mode, score, accumulated_time, max_combo)
 		_save_game_state()
+		Engine.time_scale = 1.0
 		get_tree().change_scene_to_file("res://main_menu.tscn")
 
 
@@ -1011,6 +1024,7 @@ func _on_btn_restart_over_pressed():
 
 
 func _on_btn_quit_over_pressed():
+	Engine.time_scale = 1.0
 	get_tree().change_scene_to_file("res://main_menu.tscn")
 
 
@@ -1045,6 +1059,7 @@ func _reset_game():
 func _on_btn_hint_pressed():
 	if hint_count <= 0 or tiles.is_empty(): return
 
+	AudioManager.play_sfx("powerup_use")
 	hint_count -= 1
 	update_power_up_ui()
 	Global.hints_used_this_game += 1
@@ -1069,6 +1084,7 @@ func _on_btn_hint_pressed():
 func _on_btn_shuffle_pressed():
 	if shuffle_count <= 0 or tiles.is_empty(): return
 
+	AudioManager.play_sfx("shuffle")
 	shuffle_count -= 1
 	Global.unlock_achievement("first_powerup")
 
@@ -1087,10 +1103,18 @@ func _on_btn_shuffle_pressed():
 		tile_data.append({"val": t.value, "type": t.tile_type})
 	tile_data.shuffle()
 
+	var _base_tile_script = preload("res://tile.gd")
 	var i = 0
 	for pos in tiles.keys():
 		var t = tiles[pos]
-		t.set_data(pos, tile_data[i].val, tile_data[i].type)
+		var d = tile_data[i]
+		var new_script = TileFactory.SCRIPTS.get(d.type, _base_tile_script)
+		if t.get_script() != new_script:
+			t.set_script(new_script)
+		t.is_selected = false
+		if d.type == "VIRUS":
+			t.virus_timer = 0.0
+		t.set_data(pos, d.val, d.type)
 		i += 1
 		t.scale = Vector2.ZERO
 		var tween = create_tween()
@@ -1108,6 +1132,7 @@ func _on_btn_remove_pressed():
 		return
 
 	if remove_count <= 0: return
+	AudioManager.play_sfx("powerup_use")
 	is_remove_mode = true
 	update_power_up_ui()
 	Global.unlock_achievement("first_powerup")
@@ -1221,7 +1246,8 @@ func update_combo_ui():
 func show_floating_score(points: int, used_combo: int):
 	var label = Label.new()
 	label.text = "+" + str(points) + (" x%d!" % used_combo if used_combo > 1 else "")
-	label.add_theme_font_size_override("font_size", 55)
+	var font_size = min(55 + (used_combo - 1) * 5, 75)
+	label.add_theme_font_size_override("font_size", font_size)
 	var color = Color.ORANGE_RED if used_combo >= 4 else (Color.YELLOW if used_combo >= 2 else Color.WHITE)
 	label.add_theme_color_override("font_color", color)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1544,6 +1570,26 @@ func _init_debug_ui():
 		btn.pressed.connect(Callable(self, b["method"]))
 		panel.add_child(btn)
 
+	var speed_btn = Button.new()
+	speed_btn.text = "x1 Speed"
+	speed_btn.custom_minimum_size = Vector2(90, 30)
+	speed_btn.add_theme_font_size_override("font_size", 13)
+	speed_btn.add_theme_color_override("font_color", Color.BLACK)
+	speed_btn.modulate = Color(1.0, 0.85, 0.1, 0.95)
+	speed_btn.pressed.connect(func():
+		var scales = [1.0, 2.0, 4.0]
+		var labels = ["x1 Speed", "x2 Speed", "x4 Speed"]
+		var idx = 0
+		for i in scales.size():
+			if abs(Engine.time_scale - scales[i]) < 0.1:
+				idx = i
+				break
+		idx = (idx + 1) % scales.size()
+		Engine.time_scale = scales[idx]
+		speed_btn.text = labels[idx]
+	)
+	panel.add_child(speed_btn)
+
 	# Position panel to top-right, below pause button (~y=55)
 	panel.position = Vector2(sw - 100, 55)
 
@@ -1614,3 +1660,37 @@ func show_floating_text_center(msg: String, color: Color = Color.RED):
 	tween.tween_property(label, "position", label.position - Vector2(0, 100), 1.0).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 1.0)
 	tween.tween_callback(label.queue_free)
+
+
+func _flash_wrong_tiles() -> void:
+	for pos in selected_tiles:
+		if not tiles.has(pos): continue
+		var t = tiles[pos]
+		var tween = create_tween()
+		tween.tween_property(t, "modulate", Color.RED, 0.07)
+		tween.tween_property(t, "modulate", Color.WHITE, 0.07)
+		tween.tween_property(t, "modulate", Color.RED, 0.07)
+		tween.tween_property(t, "modulate", Color.WHITE, 0.07)
+
+
+func _spawn_tile_burst(pos: Vector2, tile_type: String) -> void:
+	var burst = CPUParticles2D.new()
+	burst.position = pos
+	burst.one_shot = true
+	burst.explosiveness = 1.0
+	burst.amount = 12
+	burst.lifetime = 0.5
+	burst.initial_velocity_min = 90.0
+	burst.initial_velocity_max = 188.0
+	burst.spread = 180.0
+	burst.gravity = Vector2(0, 400)
+	burst.scale_amount_min = 4.5
+	burst.scale_amount_max = 9.0
+	match tile_type:
+		"NEGATIVE": burst.color = Color.PALE_VIOLET_RED
+		"VIRUS":    burst.color = Color.GREEN_YELLOW
+		"JOKER":    burst.color = Color.GOLD
+		_:          burst.color = Color.WHITE
+	add_child(burst)
+	burst.finished.connect(burst.queue_free)
+	burst.emitting = true
