@@ -107,6 +107,7 @@ var is_tutorial_active = false
 @onready var btn_change_level_hud = $BtnChangeLevelHUD
 
 var _change_level_layer: CanvasLayer = null
+var _settings_layer: CanvasLayer = null
 
 var is_dragging = false
 var drag_start_grid = Vector2.ZERO
@@ -141,6 +142,7 @@ func _ready():
 
 	score = 0
 	update_score_ui()
+	queue_redraw()
 
 	setup_mode_config()
 	$TutorialLayer.hide()
@@ -207,6 +209,17 @@ func setup_mode_config():
 # ==========================================
 # BOARD GENERATION
 # ==========================================
+func _draw():
+	if tile_size <= 0:
+		return
+	var pad = tile_size * 0.10
+	var board_pos = Vector2(start_pos.x - tile_size * 0.5 - pad, start_pos.y - tile_size * 0.5 - pad)
+	var board_size = Vector2(grid_cols * tile_size + pad * 2, grid_rows * tile_size + pad * 2)
+	var rect = Rect2(board_pos, board_size)
+	draw_rect(rect, Color(0.10, 0.14, 0.22, 0.88))
+	draw_rect(rect, Color(0.28, 0.38, 0.55, 0.45), false, 1.5)
+
+
 func spawn_grid():
 	if gameplay_mode == "CHALLENGE":
 		_spawn_challenge_board()
@@ -402,7 +415,7 @@ func evaluate_selection():
 		var now = Time.get_unix_time_from_system()
 		if last_score_time > 0 and now - last_score_time <= COMBO_TIMEOUT:
 			combo_count += 1
-			AudioManager.play_sfx("combo", 1.0, -6.0)
+			AudioManager.play_sfx("combo")
 		else:
 			combo_count = 1
 		last_score_time = now
@@ -466,7 +479,7 @@ func evaluate_selection():
 				apply_gravity()
 				await get_tree().create_timer(0.6).timeout
 				var cleared_pct = 1.0 - float(tiles.size()) / float(grid_rows * grid_cols)
-				if cleared_pct >= 0.70:
+				if cleared_pct >= 0.85:
 					refill_empty_slots()
 					return  # check_end_game called inside refill_empty_slots
 				check_end_game()
@@ -534,16 +547,70 @@ func scan_board_for_valid_moves() -> bool:
 
 func check_end_game():
 	if is_game_over: return
+	if gameplay_mode == "GRAVITY":
+		_check_gravity_end_game()
+		return
 	if hint_count > 0 or shuffle_count > 0 or remove_count > 0: return
 	if not scan_board_for_valid_moves():
 		trigger_end_game("NO_MOVES")
+
+
+func _check_gravity_end_game():
+	if scan_board_for_valid_moves(): return
+	# No valid moves — check if non-life power-ups are available
+	if hint_count > 0 or remove_count > 0:
+		_flash_available_powerups()
+		return
+	# hint and remove exhausted — fall back to life penalty
+	if shuffle_count > 1:
+		shuffle_count -= 1
+		update_lives_ui()
+		update_power_up_ui()
+		AudioManager.play_sfx("wrong")
+		show_floating_text_center("-1 Life!  New board...", Color(1.0, 0.35, 0.35))
+		_gravity_force_new_board()
+	else:
+		trigger_end_game("NO_LIVES")
+
+
+func _flash_available_powerups():
+	show_floating_text_center("No moves!  Use a power-up!", Color.YELLOW)
+	var btns: Array = []
+	if hint_count > 0:    btns.append($PowerUpContainer/BtnHint)
+	if remove_count > 0:  btns.append($PowerUpContainer/BtnRemove)
+	if shuffle_count > 0: btns.append($PowerUpContainer/BtnShuffle)
+	if btns.is_empty(): return
+	var btn: Button = btns[randi() % btns.size()]
+	var tween = create_tween().set_loops(4)
+	tween.tween_property(btn, "scale", Vector2(1.3, 1.3), 0.12)
+	tween.tween_property(btn, "scale", Vector2.ONE, 0.12)
+
+
+func _gravity_force_new_board():
+	for pos in tiles.keys():
+		if is_instance_valid(tiles[pos]):
+			_spawn_tile_burst(tiles[pos].position, tiles[pos].tile_type)
+			tiles[pos].queue_free()
+	tiles.clear()
+	await get_tree().create_timer(0.5).timeout
+	for _attempt in range(5):
+		for x in range(grid_cols):
+			for y in range(grid_rows):
+				spawn_single_tile(x, y)
+		if scan_board_for_valid_moves():
+			break
+		for pos in tiles.keys():
+			tiles[pos].queue_free()
+		tiles.clear()
+	await get_tree().create_timer(0.4).timeout
+	check_end_game()
 
 
 func trigger_end_game(reason: String):
 	if is_game_over: return
 	is_game_over = true
 	AudioManager.stop_bgm(2.0)
-	AudioManager.play_sfx("gameover", 1.0, -15.0)
+	AudioManager.play_sfx("gameover")
 	Global.delete_save(gameplay_mode)
 
 	var reason_text: String
@@ -938,6 +1005,100 @@ func _on_btn_change_level_pressed():
 	_change_level_layer.show()
 
 
+func _on_btn_settings_pressed():
+	if is_game_over: return
+	if _settings_layer == null:
+		_build_settings_panel()
+	is_paused = true
+	AudioManager.pause_bgm()
+	_settings_layer.show()
+
+
+func _build_settings_panel():
+	_settings_layer = CanvasLayer.new()
+	_settings_layer.layer = 4
+	add_child(_settings_layer)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.90)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_settings_layer.add_child(dim)
+
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 60)
+	margin.add_theme_constant_override("margin_top", 80)
+	margin.add_theme_constant_override("margin_right", 60)
+	margin.add_theme_constant_override("margin_bottom", 80)
+	_settings_layer.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 36)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "Settings"
+	title.add_theme_font_size_override("font_size", 46)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	vbox.add_child(_make_volume_row("Music", AudioManager.get_bgm_volume(),
+		func(v: float): AudioManager.set_bgm_volume(v)))
+	vbox.add_child(_make_volume_row("SFX", AudioManager.get_sfx_volume(),
+		func(v: float): AudioManager.set_sfx_volume(v)))
+
+	var sep := HSeparator.new()
+	vbox.add_child(sep)
+
+	var btn_back := Button.new()
+	btn_back.text = "<-- Back"
+	btn_back.custom_minimum_size = Vector2(0, 60)
+	btn_back.add_theme_font_size_override("font_size", 36)
+	btn_back.pressed.connect(func():
+		_settings_layer.hide()
+		is_paused = false
+		AudioManager.resume_bgm()
+	)
+	vbox.add_child(btn_back)
+
+
+func _make_volume_row(label_text: String, initial: float, on_change: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 20)
+
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.add_theme_font_size_override("font_size", 32)
+	lbl.custom_minimum_size = Vector2(110, 0)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(lbl)
+
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.value = initial
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.custom_minimum_size = Vector2(0, 44)
+	row.add_child(slider)
+
+	var pct := Label.new()
+	pct.text = "%d%%" % int(initial * 100)
+	pct.add_theme_font_size_override("font_size", 30)
+	pct.custom_minimum_size = Vector2(70, 0)
+	pct.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	pct.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(pct)
+
+	slider.value_changed.connect(func(v: float):
+		on_change.call(v)
+		pct.text = "%d%%" % int(v * 100)
+	)
+	return row
+
+
 func _build_change_level_panel():
 	_change_level_layer = CanvasLayer.new()
 	_change_level_layer.layer = 3
@@ -1109,9 +1270,6 @@ func _on_btn_shuffle_pressed():
 	if gameplay_mode == "GRAVITY":
 		update_lives_ui()
 		update_power_up_ui()
-		if shuffle_count <= 0:
-			trigger_end_game("NO_LIVES")
-			return
 	else:
 		update_power_up_ui()
 

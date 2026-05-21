@@ -1,16 +1,29 @@
 [gd_scene format=3 uid="uid://b15qnowd72urd"]
 
 [ext_resource type="Script" uid="uid://2ci4yrdtdjsp" path="res://tile.gd" id="1_n3f48"]
+[ext_resource type="FontFile" path="res://assets/fonts/Nunito-Bold.ttf" id="2_font"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yhqha"]
 size = Vector2(100, 100)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n3f48"]
-bg_color = Color(0.20272332, 0.20272338, 0.20272323, 1)
-corner_radius_top_left = 15
-corner_radius_top_right = 15
-corner_radius_bottom_right = 15
-corner_radius_bottom_left = 15
+bg_color = Color(0.22, 0.27, 0.38, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.52, 0.68, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+expand_margin_left = 4.0
+expand_margin_top = 4.0
+expand_margin_right = 4.0
+expand_margin_bottom = 4.0
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
 
 [node name="Tile" type="Area2D" unique_id=868591932]
 script = ExtResource("1_n3f48")
@@ -29,6 +42,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_n3f48")
 layout_mode = 0
 offset_right = 80.0
 offset_bottom = 80.0
+theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 50
 text = "5"
 horizontal_alignment = 1

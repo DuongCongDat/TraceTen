@@ -22,6 +22,22 @@ shadow_offset = Vector2(2, 2)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0xm2m"]
 bg_color = Color(0.9764706, 0.53333336, 0.015686275, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hudbtn"]
+bg_color = Color(0.10, 0.15, 0.28, 0.82)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.44, 0.58, 0.80, 0.90)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
 [node name="Main" type="Node2D" unique_id=690814753]
 script = ExtResource("1_ig7tw")
 
@@ -119,11 +135,12 @@ theme_override_styles/pressed = ExtResource("5_pressed")
 text = "Leave"
 
 [node name="PauseButton" type="Button" parent="." unique_id=1633161824]
-custom_minimum_size = Vector2(52, 48)
-offset_left = 612.0
-offset_top = 5.0
-offset_right = 720.0
-offset_bottom = 55.0
+custom_minimum_size = Vector2(52, 52)
+offset_left = 666.0
+offset_top = 4.0
+offset_right = 718.0
+offset_bottom = 56.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_hudbtn")
 text = "||"
 
 [node name="TimeBar" type="ProgressBar" parent="." unique_id=184879706]
@@ -187,12 +204,12 @@ text = "⇄ Levels"
 visible = false
 
 [node name="LivesLabel" type="Label" parent="." unique_id=1900000004]
-offset_left = 480.0
-offset_top = 76.0
-offset_right = 715.0
-offset_bottom = 110.0
+offset_left = 570.0
+offset_top = 57.0
+offset_right = 720.0
+offset_bottom = 82.0
 theme_override_fonts/font = ExtResource("7_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 26
 text = "♥♥♥"
 visible = false
 
@@ -354,17 +371,29 @@ text = "Skip"
 
 [node name="BtnHelp" type="Button" parent="." unique_id=720812609]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 48)
-offset_left = 560.0
-offset_top = 5.0
-offset_right = 608.0
-offset_bottom = 55.0
+custom_minimum_size = Vector2(52, 52)
+offset_left = 558.0
+offset_top = 4.0
+offset_right = 610.0
+offset_bottom = 56.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_hudbtn")
 text = "?"
+
+[node name="BtnSettingsIcon" type="Button" parent="." unique_id=1900000015]
+custom_minimum_size = Vector2(52, 52)
+offset_left = 612.0
+offset_top = 4.0
+offset_right = 664.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_hudbtn")
+text = "⚙"
 
 [connection signal="pressed" from="PauseMenuLayer/VBoxContainer/BtnChangeLevel" to="." method="_on_btn_change_level_pressed"]
 [connection signal="pressed" from="PauseMenuLayer/VBoxContainer/BtnContinue" to="." method="_on_btn_continue_pressed"]
 [connection signal="pressed" from="PauseMenuLayer/VBoxContainer/BtnRestart" to="." method="_on_btn_restart_pressed"]
 [connection signal="pressed" from="PauseMenuLayer/VBoxContainer/BtnQuit" to="." method="_on_btn_quit_pressed"]
+[connection signal="pressed" from="BtnSettingsIcon" to="." method="_on_btn_settings_pressed"]
 [connection signal="pressed" from="PauseButton" to="." method="_on_pause_button_pressed"]
 [connection signal="pressed" from="GameOverLayer/VBoxContainer/BtnRestartOver" to="." method="_on_btn_restart_over_pressed"]
 [connection signal="pressed" from="GameOverLayer/VBoxContainer/BtnQuitOver" to="." method="_on_btn_quit_over_pressed"]
