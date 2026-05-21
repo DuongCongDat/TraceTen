@@ -90,3 +90,8 @@ func _fmt_time(secs: float) -> String:
 
 func _on_btn_back_pressed():
 	get_tree().change_scene_to_file("res://main_menu.tscn")
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		_on_btn_back_pressed()

@@ -104,6 +104,12 @@ func unlock_achievement(id: String):
 	save_achievements()
 	achievement_unlocked.emit(id)
 
+func reset_achievements():
+	_achievements = {}
+	modes_played = []
+	if FileAccess.file_exists(ACHIEVEMENT_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(ACHIEVEMENT_PATH))
+
 func update_achievement_progress(id: String, value: int):
 	var entry = _get_entry(id)
 	if entry["unlocked"]:

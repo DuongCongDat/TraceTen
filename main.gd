@@ -19,6 +19,9 @@ var hint_count = 1
 var shuffle_count = 1   # Gravity: starts at 3 (lives)
 var remove_count = 1
 var is_remove_mode = false
+var _prev_hint_count = -1
+var _prev_shuffle_count = -1
+var _prev_remove_count = -1
 
 var score = 0
 var max_combo = 1
@@ -141,6 +144,7 @@ func _ready():
 
 	setup_mode_config()
 	$TutorialLayer.hide()
+	AudioManager.play_bgm()
 	start_time_attack_game()
 	if Global.load_save and gameplay_mode in ["ZEN", "MUTATION", "CHALLENGE"]:
 		_load_game_state()
@@ -538,6 +542,7 @@ func check_end_game():
 func trigger_end_game(reason: String):
 	if is_game_over: return
 	is_game_over = true
+	AudioManager.stop_bgm(2.0)
 	AudioManager.play_sfx("gameover", 1.0, -15.0)
 	Global.delete_save(gameplay_mode)
 
@@ -884,14 +889,26 @@ func format_time_mmss(seconds: float) -> String:
 # ==========================================
 # PAUSE MENU
 # ==========================================
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		if is_game_over:
+			return
+		if is_paused:
+			_on_btn_continue_pressed()
+		else:
+			_on_pause_button_pressed()
+
+
 func _on_pause_button_pressed():
 	if is_game_over: return
 	is_paused = true
+	AudioManager.pause_bgm()
 	pause_menu.show()
 
 
 func _on_btn_continue_pressed():
 	is_paused = false
+	AudioManager.resume_bgm()
 	pause_menu.hide()
 
 
@@ -907,6 +924,7 @@ func _on_btn_quit_pressed():
 	if gameplay_mode in ["CLASSIC", "GRAVITY"]:
 		trigger_end_game("LEFT")
 	else:
+		AudioManager.stop_bgm(1.0)
 		Global.submit_score(gameplay_mode, score, accumulated_time, max_combo)
 		_save_game_state()
 		Engine.time_scale = 1.0
@@ -1162,6 +1180,26 @@ func update_power_up_ui():
 	else:
 		remove_btn.disabled = remove_count <= 0
 		remove_btn.text = "✕ Del" if remove_count <= 1 else "✕ Del x%d" % remove_count
+
+	_animate_powerup_change(hint_btn,    _prev_hint_count,    hint_count)
+	_animate_powerup_change(shuffle_btn, _prev_shuffle_count, shuffle_count)
+	_animate_powerup_change(remove_btn,  _prev_remove_count,  remove_count)
+	_prev_hint_count    = hint_count
+	_prev_shuffle_count = shuffle_count
+	_prev_remove_count  = remove_count
+
+
+func _animate_powerup_change(btn: Button, prev: int, curr: int) -> void:
+	if prev < 0:
+		return
+	var tween = create_tween().set_trans(Tween.TRANS_BACK)
+	if curr <= 0 and prev > 0:
+		tween.tween_property(btn, "scale", Vector2(0.8, 0.8), 0.08)
+		tween.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.08)
+	elif curr > 0 and prev <= 0:
+		tween.set_ease(Tween.EASE_OUT)
+		tween.tween_property(btn, "scale", Vector2(1.3, 1.3), 0.1)
+		tween.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.1)
 
 
 func update_lives_ui():
@@ -1556,6 +1594,7 @@ func _init_debug_ui():
 		{"label": "Next Lv",   "method": "_debug_challenge_next_level",    "modes": ["CHALLENGE"]},
 		{"label": "+200 pts",  "method": "_debug_add_score",               "modes": []},
 		{"label": "Reset PU",  "method": "_debug_reset_powerups",          "modes": []},
+		{"label": "Reset ACH", "method": "_debug_reset_achievements",       "modes": []},
 	]
 
 	for b in button_defs:
@@ -1643,6 +1682,11 @@ func _debug_reset_powerups():
 		update_lives_ui()
 	update_power_up_ui()
 	show_floating_text_center("Power-ups reset!", Color.CYAN)
+
+
+func _debug_reset_achievements():
+	Global.reset_achievements()
+	show_floating_text_center("Achievements reset!", Color.ORANGE)
 
 
 func show_floating_text_center(msg: String, color: Color = Color.RED):

@@ -17,3 +17,8 @@ func _on_btn_help_pressed():
 
 func _on_btn_quit_pressed():
 	get_tree().quit()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		get_tree().quit()
