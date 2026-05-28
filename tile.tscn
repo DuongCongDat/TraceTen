@@ -1,29 +1,22 @@
 [gd_scene format=3 uid="uid://b15qnowd72urd"]
 
 [ext_resource type="Script" uid="uid://2ci4yrdtdjsp" path="res://tile.gd" id="1_n3f48"]
-[ext_resource type="FontFile" path="res://assets/fonts/Nunito-Bold.ttf" id="2_font"]
+[ext_resource type="FontFile" path="res://assets/fonts/JetBrainsMono-Variable.ttf" id="2_font"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yhqha"]
 size = Vector2(100, 100)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n3f48"]
-bg_color = Color(0.22, 0.27, 0.38, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
+bg_color = Color(1, 1, 1, 1)
 border_width_bottom = 2
-border_color = Color(0.42, 0.52, 0.68, 1)
+border_color = Color(0.314, 0.275, 0.157, 0.06)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-expand_margin_left = 4.0
-expand_margin_top = 4.0
-expand_margin_right = 4.0
-expand_margin_bottom = 4.0
-shadow_color = Color(0, 0, 0, 0.55)
-shadow_size = 4
-shadow_offset = Vector2(0, 2)
+shadow_color = Color(0.314, 0.275, 0.157, 0.06)
+shadow_size = 1
+shadow_offset = Vector2(0, 1)
 
 [node name="Tile" type="Area2D" unique_id=868591932]
 script = ExtResource("1_n3f48")

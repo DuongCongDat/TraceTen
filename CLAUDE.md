@@ -201,6 +201,7 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 - **`DEBUG_MODE = true` trong `main.gd`** — **BẮT BUỘC set `false` trước khi build APK**
 - **Combo timer dùng real clock** (`Time.get_unix_time_from_system()`) — không dừng khi pause game. Chấp nhận được vì combo timeout 5s và pause thường ngắn.
 - **Tile hitbox KHÔNG scale theo `TILE_VISUAL_RATIO`** — chỉ visual (sprite) được scale. CollisionShape2D trong `tile.tscn` giữ nguyên kích thước cell. Cần verify trên thiết bị thật rằng touch vào khoảng trống giữa tiles không trigger nhầm.
+- **Tile gap: giữ TILE_VISUAL_RATIO (0.90) thay vì actual gap** — T7 UI handoff đề xuất 4dp gap thật (8px tại 720px viewport) dùng GridContainer. Quyết định: giữ approach hiện tại (visual gap qua scale) vì ít rủi ro hơn. **TODO tiềm năng:** nếu hitbox gap trên thiết bị thật có vấn đề → migrate sang actual gap: đổi positioning sang `x * (tile_size + TILE_GAP)`, thu CollisionShape2D xuống tile_size thật, cập nhật `pixel_to_grid()` math.
 - **`total_duration` bị modify động trong Gravity** — mỗi tile ăn được cộng `GRAVITY_TIME_PER_TILE` (1.0s) vào `total_duration`. Không phải bug.
 - **`scan_board_for_valid_moves()` là O(n⁴)** — chỉ gọi sau actions (evaluate_selection, power-up, refill). KHÔNG gọi trong `_process()`.
 - **Board 8×12 = 96 ô** — `grid_cols=8`, `grid_rows=12`. `tile_size` tự tính: `screen_w * 0.90 / grid_cols`.
@@ -626,7 +627,7 @@ const LEVELS = [
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
 | **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
 | **T6** ✅ | Achievement System | 25 thành tựu, `Global.unlock_achievement()`, notification popup, Achievement screen |
-| **T7** ⏳ | Sound + VFX + UI Polish | ✅ SFX: `AudioManager` pool 8 player, 11 SFX hooked; ✅ VFX: tile burst `CPUParticles2D`, combo bounce, wrong flash, score float; ⏳ UI Polish (button sizes, font, theme); ⏳ BGM |
+| **T7** ⏳ | Sound + VFX + UI Polish | ✅ SFX: `AudioManager` pool 8 player, 11 SFX hooked; ✅ VFX: tile burst `CPUParticles2D`, combo bounce, wrong flash, score float; ✅ UI Phase 1: `scripts/theme_tokens.gd` (Mint Cream palette + StyleBox helpers + font helpers), `main_theme.tres` → Inter Variable + JetBrains Mono Variable; ✅ UI Phase 2: tile redesign — `tile.tscn/gd` (white idle, mint selected, scale 1.05 anim), `tile_mystery.gd` (slate hidden + hatch overlay + slate-revealed), `tile_virus.gd` (sage style + corner dots + countdown dots + pulse glow), `tile_negative.gd` (dusty rose + chevron), `tile_joker.gd` (amber gradient + pixel-art jester); helper scripts `mystery_hatch.gd`, `joker_draw.gd`; ⏳ UI Phase 3-5; ⏳ BGM |
 | **T8** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
 | **T9** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
 | **T10** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |

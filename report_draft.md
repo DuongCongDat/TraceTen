@@ -100,7 +100,7 @@ TraceTen ships with five distinct game modes. Each mode reuses the same board an
 **Rules:**
 - Count-up timer (tracks total play time). The timer pauses when the game is paused.
 - No failure condition from time. The game ends only if there are no valid moves *and* all power-ups are used up.
-- **Power-up refill milestone:** every 100 points accumulated grants `+3 Hint`, `+1 Shuffle`, `+2 Remove` (stackable, tracked by `zen_milestone_count`).
+- **Power-up refill milestone:** every 100 points accumulated grants **+1 Hint, +1 Shuffle, +1 Remove** (stackable, tracked by `zen_milestone_count`).
 - Full save/load support: the board state, score, timer, and power-up counts are saved to `user://save_zen.json` on pause or leave. The player can resume in a future session via a **Continue** prompt.
 - Leaving does not trigger a game-over — the save file is preserved.
 
@@ -112,7 +112,7 @@ TraceTen ships with five distinct game modes. Each mode reuses the same board an
 
 **Rules:**
 - 150-second countdown. The timer pauses when the game is paused.
-- After each valid selection, cleared tiles are removed and the remaining tiles "fall" in the current gravity direction. 70% of empty cells are then refilled with new random tiles.
+- After each valid selection, cleared tiles are removed and the remaining tiles "fall" in the current gravity direction. When 70% or more of the board has been cleared, **all** empty cells are refilled with new random tiles.
 - Each tile cleared adds **+1 second** to the countdown (intentional design; `total_duration` is mutated dynamically).
 - **Lives system:** The player has 3 lives (`shuffle_count = 3`). Each use of the Shuffle power-up costs one life. When lives reach 0, the game ends immediately (`NO_LIVES`).
 - **Four gravity levels** based on score thresholds:
@@ -137,7 +137,7 @@ TraceTen ships with five distinct game modes. Each mode reuses the same board an
 - Count-up timer; pauses on game pause.
 - The board contains a mix of normal and special tiles (Joker, Virus, Mystery, Negative — described in Section 3).
 - Special tiles grant **bonus points** when included in a valid selection (see Section 4.2).
-- Power-up refill milestone: same as Zen (every 100 points).
+- Board refill: when 70% or more of the board has been cleared, all empty cells are refilled (same trigger as Zen). **No** power-up milestone refill in Mutation.
 - Full save/load support via `user://save_mutation.json`.
 
 **End conditions:** `NO_MOVES` only.
@@ -196,14 +196,14 @@ This design lets the Joker serve as a flexible bridge between any numbers, witho
 
 #### 3.1.2 Virus Tile
 
-The Virus tile is displayed with a distinct color (blue/teal) and a visible countdown. Every **10 seconds**, the tile mutates: its value is re-rolled according to the following probability distribution:
+The Virus tile is displayed in **green-yellow** and a visible countdown. Every **10 seconds**, the tile mutates: its value is re-rolled according to the following probability distribution:
 
 | Outcome | Probability | New value range |
 |---------|-------------|-----------------|
 | Positive | 65% | 1–9 |
 | Mild negative | 30% | −5 to −1 |
-| Strong negative | 4% | −9 to −6 |
-| Zero (explosion) | 1% | 0 |
+| Strong negative | ~4.7% | −9 to −6 |
+| Zero (explosion) | ~0.3% | 0 |
 
 If the Virus reaches **0** and the player has not cleared it, the tile **explodes**: it is permanently removed from the grid, leaving a hole. That hole disrupts bounding-box calculations for any selection that would span across it, forcing the player to work around the gap for the rest of the session.
 
@@ -242,19 +242,19 @@ Three power-ups are available across all modes. They are represented as integer 
 
 Highlights a valid rectangular region on the board. The hint algorithm (`find_hint_path()`) iterates over all possible rectangle corners in O(n⁴) time with an early exit on the first valid match. In Challenge Mode, the hint only surfaces rectangles that also satisfy the current level's shape constraint.
 
-Starting counts: 3 (Classic/Gravity) / increases each 100-point milestone (Zen/Challenge/Mutation: +3 per milestone).
+Starting counts: 3 (Classic/Gravity) / increases each 100-point milestone (Zen/Challenge only: +1 per milestone).
 
 #### Shuffle
 
 Re-randomizes the entire board. In **Gravity Mode**, Shuffle is repurposed as the **lives** mechanic: `shuffle_count` starts at 3, and each Shuffle use decrements it by 1. When `shuffle_count` reaches 0 after a use, the game ends immediately (`NO_LIVES`). In all other modes, Shuffle has no additional penalty.
 
-Starting counts: 1 (Classic/Mutation) / 3 (Gravity, these are lives) / increases each milestone (Zen/Challenge: +1 per milestone).
+Starting counts: 1 (Classic/Mutation) / 3 (Gravity, these are lives) / increases each 100-point milestone (Zen/Challenge only: +1 per milestone).
 
 #### Remove
 
 Removes a single tile from the board without scoring. The player activates Remove mode by tapping the Remove button; the next tile they tap is deleted. Tapping the Remove button again while Remove mode is active **cancels** the operation (no tile is removed).
 
-Starting counts: 1 (Classic/Gravity) / increases each milestone (Zen/Challenge/Mutation: +2 per milestone).
+Starting counts: 1 (Classic/Gravity/Mutation) / increases each 100-point milestone (Zen/Challenge only: +1 per milestone).
 
 ---
 

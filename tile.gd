@@ -6,15 +6,26 @@ var value = 0
 var tile_type = "NORMAL"
 var is_selected = false
 var virus_timer = 0.0
-var _tile_style: StyleBoxFlat
+
+var _idle_style: StyleBoxFlat
+var _selected_style: StyleBoxFlat
+var _bg: Panel
+var _label: Label
 
 func _ready():
-	_tile_style = $Background.get_theme_stylebox("panel").duplicate()
-	$Background.add_theme_stylebox_override("panel", _tile_style)
+	_bg    = $Background
+	_label = $Background/Label
+	_bg.clip_contents = true
+	_idle_style     = ThemeTokens.sb_tile_idle()
+	_selected_style = ThemeTokens.sb_tile_selected()
+	_bg.add_theme_stylebox_override("panel", _idle_style)
+	var fv = ThemeTokens.font_mono(700)
+	_label.add_theme_font_override("font", fv)
+	_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
 
 func set_data(pos, val, type = "NORMAL"):
 	grid_pos = pos
-	value = val
+	value    = val
 	tile_type = type
 	update_visuals()
 
@@ -22,30 +33,27 @@ func get_effective_value() -> int:
 	return value
 
 func update_visuals():
-	var label = $Background/Label
-	var bg = $Background
-	label.text = str(value)
-	bg.modulate = Color.WHITE
-	if _tile_style:
-		_tile_style.bg_color = _value_bg_color(value)
+	if not _bg or not _label:
+		return
+	_label.text = str(value)
+	_bg.add_theme_stylebox_override("panel", _idle_style)
+	_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	_bg.modulate = Color.WHITE
 	_update_type_visuals()
 
-func _value_bg_color(val: int) -> Color:
-	var cool = Color(0.18, 0.26, 0.52, 1.0)
-	var warm = Color(0.50, 0.25, 0.14, 1.0)
-	if val <= 0:
-		return Color(0.22, 0.27, 0.38, 1.0)
-	var t = clamp((val - 1) / 8.0, 0.0, 1.0)
-	return cool.lerp(warm, t)
-
-# Virtual: subclass override để tùy chỉnh hiển thị theo loại ô.
+# Virtual — subclass overrides for type-specific look.
 func _update_type_visuals():
 	pass
 
 func select():
 	is_selected = true
-	$Background.modulate = $Background.modulate.darkened(0.2)
+	_bg.add_theme_stylebox_override("panel", _selected_style)
+	_label.add_theme_color_override("font_color", Color.WHITE)
+	var tw = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_bg, "scale", Vector2(1.05, 1.05), 0.08)
 
 func deselect():
 	is_selected = false
+	var tw = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_bg, "scale", Vector2(1.0, 1.0), 0.08)
 	update_visuals()

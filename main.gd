@@ -25,6 +25,10 @@ var _prev_remove_count = -1
 
 var score = 0
 var max_combo = 1
+var _selection_sum: int = 0
+var _display_score: int = 0
+var _score_tween: Tween = null
+var _combo_ring = null  # ComboRing node, created in _setup_hud_visuals
 
 # --- COMBO SYSTEM ---
 var combo_count = 1
@@ -128,8 +132,8 @@ func _ready():
 	var screen_h = get_viewport_rect().size.y
 
 	# Compute tile_size to fit within screen, leaving room for UI top/bottom
-	var ui_top    = 130.0
-	var ui_bottom = 60.0
+	var ui_top    = 192.0  # 128px top bar + 64px sub-info bar
+	var ui_bottom = 110.0  # power-up bar
 	var avail_w   = screen_w * 0.90  # 10% horizontal margin (increased from 5%)
 	var avail_h   = screen_h - ui_top - ui_bottom
 	tile_size = int(min(floor(avail_w / grid_cols), floor(avail_h / grid_rows)))
@@ -153,6 +157,7 @@ func _ready():
 		Global.load_save = false
 	else:
 		spawn_grid()
+	_setup_hud_visuals()
 	_init_debug_ui()
 
 
@@ -171,7 +176,7 @@ func setup_mode_config():
 		"GRAVITY":
 			shuffle_count = 3
 			total_duration = 150.0
-			time_bar.show()
+			time_bar.hide()
 			time_bar.max_value = total_duration
 			lives_label.show()
 			gravity_level_label.show()
@@ -180,7 +185,7 @@ func setup_mode_config():
 		"CLASSIC":
 			shuffle_count = 1
 			total_duration = 120.0
-			time_bar.show()
+			time_bar.hide()
 			time_bar.max_value = total_duration
 			lives_label.hide()
 			gravity_level_label.hide()
@@ -210,14 +215,40 @@ func setup_mode_config():
 # BOARD GENERATION
 # ==========================================
 func _draw():
-	if tile_size <= 0:
-		return
-	var pad = tile_size * 0.10
-	var board_pos = Vector2(start_pos.x - tile_size * 0.5 - pad, start_pos.y - tile_size * 0.5 - pad)
-	var board_size = Vector2(grid_cols * tile_size + pad * 2, grid_rows * tile_size + pad * 2)
-	var rect = Rect2(board_pos, board_size)
-	draw_rect(rect, Color(0.10, 0.14, 0.22, 0.88))
-	draw_rect(rect, Color(0.28, 0.38, 0.55, 0.45), false, 1.5)
+	var sw = get_viewport_rect().size.x
+	var sh = get_viewport_rect().size.y
+
+	# Full-screen base (phủ nền mặc định tối của Godot)
+	draw_rect(Rect2(0.0, 0.0, sw, sh), ThemeTokens.APP_BG)
+
+	# Power-up bar background
+	draw_rect(Rect2(0.0, sh - 110.0, sw, 110.0), ThemeTokens.PHONE_BG)
+
+	# Board background (Mint Cream palette)
+	if tile_size > 0:
+		var pad = tile_size * 0.10
+		var board_pos = Vector2(start_pos.x - tile_size * 0.5 - pad, start_pos.y - tile_size * 0.5 - pad)
+		var board_size = Vector2(grid_cols * tile_size + pad * 2, grid_rows * tile_size + pad * 2)
+		var rect = Rect2(board_pos, board_size)
+		draw_rect(rect, ThemeTokens.BOARD_BG)
+		draw_rect(rect, ThemeTokens.BOARD_INSET, false, 1.5)
+
+	# Selection box visual (fill + border, colour depends on sum)
+	if selection_box and selection_box.visible:
+		var sel_rect = Rect2(selection_box.position, selection_box.size)
+		if _selection_sum == 10:
+			draw_rect(sel_rect, Color(ThemeTokens.MINT.r, ThemeTokens.MINT.g, ThemeTokens.MINT.b, 0.18))
+			draw_rect(sel_rect, ThemeTokens.MINT_DARK, false, 2.5)
+		elif _selection_sum > 10:
+			draw_rect(sel_rect, Color(ThemeTokens.NEG_BG.r, ThemeTokens.NEG_BG.g, ThemeTokens.NEG_BG.b, 0.18))
+			draw_rect(sel_rect, ThemeTokens.NEG_DARK, false, 2.5)
+		else:
+			draw_rect(sel_rect, Color(ThemeTokens.MINT_SOFT.r, ThemeTokens.MINT_SOFT.g, ThemeTokens.MINT_SOFT.b, 0.25))
+			draw_rect(sel_rect, ThemeTokens.MINT, false, 2.0)
+
+	# Top bar + sub-info bar (drawn last to cover any board bleed into UI zone)
+	draw_rect(Rect2(0.0, 0.0, sw, 192.0), ThemeTokens.PHONE_BG)
+	draw_line(Vector2(0, 192), Vector2(sw, 192), Color(ThemeTokens.BOARD_INSET.r, ThemeTokens.BOARD_INSET.g, ThemeTokens.BOARD_INSET.b, 0.5), 1.0)
 
 
 func spawn_grid():
@@ -307,6 +338,7 @@ func handle_rectangle_input(event):
 		else:
 			is_dragging = false
 			selection_box.visible = false
+			queue_redraw()
 			evaluate_selection()
 	elif event is InputEventScreenDrag or event is InputEventMouseMotion:
 		if is_dragging:
@@ -347,17 +379,15 @@ func update_selection(touch_pos: Vector2):
 	for pos in selected_tiles:
 		current_sum += tiles[pos].get_effective_value()
 
+	_selection_sum = current_sum
+	queue_redraw()
+
 	var sum_label = selection_box.get_node("SumLabel")
 	sum_label.text = str(current_sum)
-	sum_label.position.x = (selection_box.size.x - sum_label.size.x) / 2.0
-	sum_label.position.y = -60
-
-	if current_sum == 10:
-		sum_label.add_theme_color_override("font_color", Color.GREEN)
-	elif current_sum > 10:
-		sum_label.add_theme_color_override("font_color", Color.RED)
-	else:
-		sum_label.add_theme_color_override("font_color", Color.WHITE)
+	sum_label.add_theme_stylebox_override("normal", ThemeTokens.sb_sum_bubble(current_sum == 10))
+	sum_label.add_theme_color_override("font_color", Color.WHITE)
+	sum_label.size = Vector2(88, 44)
+	sum_label.position = Vector2((selection_box.size.x - 88.0) * 0.5, -54.0)
 
 
 # ==========================================
@@ -462,9 +492,12 @@ func evaluate_selection():
 
 		for pos in selected_tiles:
 			if tiles.has(pos):
-				_spawn_tile_burst(tiles[pos].position, tiles[pos].tile_type)
-				tiles[pos].queue_free()
+				var t = tiles[pos]
+				_spawn_tile_burst(t.position, t.tile_type)
 				tiles.erase(pos)
+				var tw = t.create_tween()
+				tw.tween_property(t, "scale", Vector2.ZERO, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+				tw.tween_callback(t.queue_free)
 
 		selected_tiles.clear()
 
@@ -562,13 +595,16 @@ func _check_gravity_end_game():
 		_flash_available_powerups()
 		return
 	# hint and remove exhausted — fall back to life penalty
-	if shuffle_count > 1:
+	if shuffle_count > 0:
 		shuffle_count -= 1
 		update_lives_ui()
 		update_power_up_ui()
 		AudioManager.play_sfx("wrong")
 		show_floating_text_center("-1 Life!  New board...", Color(1.0, 0.35, 0.35))
-		_gravity_force_new_board()
+		if shuffle_count <= 0:
+			trigger_end_game("NO_LIVES")
+		else:
+			_gravity_force_new_board()
 	else:
 		trigger_end_game("NO_LIVES")
 
@@ -936,9 +972,16 @@ func _process(delta):
 		if remaining <= 0:
 			combo_count = 1
 			combo_label.hide()
+			if is_instance_valid(_combo_ring):
+				_combo_ring.visible = false
 		else:
 			combo_label.show()
-			combo_label.text = "x%d  %.0fs" % [combo_count, ceil(remaining)]
+			combo_label.text = "×%d" % combo_count
+			if is_instance_valid(_combo_ring):
+				_combo_ring.visible = true
+				_combo_ring.ratio = clampf(remaining / COMBO_TIMEOUT, 0.0, 1.0)
+				_combo_ring.combo_count = combo_count
+				_combo_ring.queue_redraw()
 
 
 func update_timer_display(seconds: float):
@@ -1215,6 +1258,7 @@ func _reset_game():
 
 	Global.delete_save(gameplay_mode)
 	score = 0
+	_display_score = 0
 	is_game_over = false
 	accumulated_time = 0.0
 	max_combo = 1
@@ -1270,6 +1314,9 @@ func _on_btn_shuffle_pressed():
 	if gameplay_mode == "GRAVITY":
 		update_lives_ui()
 		update_power_up_ui()
+		if shuffle_count <= 0:
+			trigger_end_game("NO_LIVES")
+			return
 	else:
 		update_power_up_ui()
 
@@ -1323,21 +1370,17 @@ func update_power_up_ui():
 	var remove_btn  = $PowerUpContainer/BtnRemove
 
 	hint_btn.disabled = hint_count <= 0
-	hint_btn.text = "? Hint" if hint_count <= 1 else "? Hint x%d" % hint_count
+	hint_btn.text = "?" if hint_count <= 1 else "?\n×%d" % hint_count
 
-	if gameplay_mode == "GRAVITY":
-		shuffle_btn.disabled = shuffle_count <= 0
-		shuffle_btn.text = "♥x%d" % max(shuffle_count, 0)
-	else:
-		shuffle_btn.disabled = shuffle_count <= 0
-		shuffle_btn.text = "↺ Shuffle" if shuffle_count <= 1 else "↺ x%d" % shuffle_count
+	shuffle_btn.disabled = shuffle_count <= 0
+	shuffle_btn.text = "↺" if shuffle_count <= 1 else "↺\n×%d" % shuffle_count
 
 	if is_remove_mode:
-		remove_btn.text = "✕ Cancel"
+		remove_btn.text = "✕\ncancel"
 		remove_btn.disabled = false
 	else:
 		remove_btn.disabled = remove_count <= 0
-		remove_btn.text = "✕ Del" if remove_count <= 1 else "✕ Del x%d" % remove_count
+		remove_btn.text = "✕" if remove_count <= 1 else "✕\n×%d" % remove_count
 
 	_animate_powerup_change(hint_btn,    _prev_hint_count,    hint_count)
 	_animate_powerup_change(shuffle_btn, _prev_shuffle_count, shuffle_count)
@@ -1388,7 +1431,146 @@ func _update_challenge_hud():
 
 
 func update_score_ui():
-	$ScoreLabel.text = "Score: " + str(score)
+	if _score_tween and _score_tween.is_running():
+		_score_tween.kill()
+	_score_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_score_tween.tween_method(_set_display_score, float(_display_score), float(score), 0.35)
+
+func _set_display_score(val: float):
+	_display_score = int(val)
+	$ScoreLabel.text = "Score: " + str(_display_score)
+
+
+func _setup_hud_visuals():
+	var sw := get_viewport_rect().size.x
+	var sh := get_viewport_rect().size.y
+
+	# --- TOP BAR: PauseButton (top-left, hamburger style) ---
+	$PauseButton.position = Vector2(12, 12)
+	$PauseButton.size = Vector2(68, 68)
+	$PauseButton.custom_minimum_size = Vector2(68, 68)
+	$PauseButton.text = "≡"
+	var sb_pause := StyleBoxFlat.new()
+	ThemeTokens._set_radius(sb_pause, 20)
+	sb_pause.bg_color = Color.WHITE
+	sb_pause.shadow_color = Color(0, 0, 0, 0.10)
+	sb_pause.shadow_size = 6
+	sb_pause.shadow_offset = Vector2(0, 2)
+	$PauseButton.add_theme_stylebox_override("normal",  sb_pause)
+	$PauseButton.add_theme_stylebox_override("hover",   sb_pause)
+	$PauseButton.add_theme_stylebox_override("pressed", sb_pause)
+	$PauseButton.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	$PauseButton.add_theme_font_size_override("font_size", 30)
+
+	# --- TOP BAR: ScoreLabel (centered) ---
+	$ScoreLabel.position = Vector2(88, 8)
+	$ScoreLabel.size = Vector2(sw - 96, 112)
+	$ScoreLabel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	$ScoreLabel.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	$ScoreLabel.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	$ScoreLabel.add_theme_font_size_override("font_size", 52)
+	$ScoreLabel.add_theme_color_override("font_color", ThemeTokens.TEXT)
+
+	$TimeBar.hide()
+
+	# --- SUB-INFO BAR (128..192): TimeLabel (left) ---
+	$TimeLabel.position = Vector2(16, 134)
+	$TimeLabel.size = Vector2(220, 48)
+	$TimeLabel.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	$TimeLabel.add_theme_font_override("font", ThemeTokens.font_mono(400))
+	$TimeLabel.add_theme_font_size_override("font_size", 28)
+	$TimeLabel.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+
+	# --- SUB-INFO BAR: ComboLabel (compact badge, right side) ---
+	var _badge := 64.0
+	combo_label.position = Vector2(sw - _badge - 8.0, 128.0)
+	combo_label.size = Vector2(_badge, _badge)
+	combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	combo_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	combo_label.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	combo_label.add_theme_font_size_override("font_size", 24)
+
+	# ComboRing — added just before combo_label in tree so it renders behind the text
+	var ring := ComboRing.new()
+	ring.name = "ComboRing"
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.position = combo_label.position
+	ring.size = combo_label.size
+	ring.visible = false
+	add_child(ring)
+	move_child(ring, combo_label.get_index())
+	_combo_ring = ring
+
+	# --- SUB-INFO BAR: GravityLevelLabel (center) ---
+	gravity_level_label.position = Vector2(sw * 0.5 - 80, 134)
+	gravity_level_label.size = Vector2(160, 48)
+	gravity_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gravity_level_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	gravity_level_label.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	gravity_level_label.add_theme_font_size_override("font_size", 26)
+	gravity_level_label.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
+
+	# --- SUB-INFO BAR: LivesLabel (right) ---
+	lives_label.position = Vector2(sw - 200, 134)
+	lives_label.size = Vector2(188, 48)
+	lives_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	lives_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	lives_label.add_theme_font_size_override("font_size", 26)
+
+	# --- SUB-INFO BAR: ChallengeLevelLabel (left) ---
+	challenge_level_label.position = Vector2(16, 134)
+	challenge_level_label.size = Vector2(sw * 0.5 - 16, 48)
+	challenge_level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	challenge_level_label.add_theme_font_size_override("font_size", 24)
+
+	# --- SUB-INFO BAR: ChallengeConstraintLabel (right) ---
+	challenge_constraint_label.position = Vector2(sw * 0.5, 134)
+	challenge_constraint_label.size = Vector2(sw * 0.5 - 84, 48)
+	challenge_constraint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	challenge_constraint_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	challenge_constraint_label.add_theme_font_size_override("font_size", 22)
+
+	# --- SUB-INFO BAR: BtnChangeLevelHUD (far right) ---
+	btn_change_level_hud.position = Vector2(sw - 80, 134)
+	btn_change_level_hud.size = Vector2(72, 48)
+	btn_change_level_hud.add_theme_font_size_override("font_size", 18)
+
+	# --- SELECTION BOX --- transparent fill (border handled in _draw)
+	selection_box.color = Color(0, 0, 0, 0)
+	var _sum_lbl = selection_box.get_node("SumLabel")
+	_sum_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_sum_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_sum_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	_sum_lbl.add_theme_font_size_override("font_size", 36)
+
+	# --- POWER-UP BAR (bottom) ---
+	var btn_size := 88.0
+	var btn_gap  := 24.0
+	var total_btn_w := 3.0 * btn_size + 2.0 * btn_gap
+	var bx := (sw - total_btn_w) * 0.5
+	var by := sh - btn_size - 16.0
+
+	$PowerUpContainer.position = Vector2(bx, by)
+	$PowerUpContainer.size = Vector2(total_btn_w, btn_size)
+	$PowerUpContainer.add_theme_constant_override("separation", int(btn_gap))
+
+	var sb_pu_disabled := StyleBoxFlat.new()
+	ThemeTokens._set_radius(sb_pu_disabled, ThemeTokens.POWERUP_RADIUS)
+	sb_pu_disabled.bg_color = Color(0.87, 0.84, 0.77)
+
+	var _pu_btns := [$PowerUpContainer/BtnHint, $PowerUpContainer/BtnShuffle, $PowerUpContainer/BtnRemove]
+	for btn in _pu_btns:
+		btn.custom_minimum_size = Vector2(btn_size, btn_size)
+		btn.add_theme_stylebox_override("normal",   ThemeTokens.sb_powerup_button())
+		btn.add_theme_stylebox_override("hover",    ThemeTokens.sb_powerup_button())
+		btn.add_theme_stylebox_override("pressed",  ThemeTokens.sb_powerup_button())
+		btn.add_theme_stylebox_override("disabled", sb_pu_disabled)
+		btn.add_theme_font_override("font", ThemeTokens.font_mono(700))
+		btn.add_theme_font_size_override("font_size", 30)
+		btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
+		btn.add_theme_color_override("font_disabled_color", Color(0.65, 0.60, 0.52))
+
+	queue_redraw()
 
 
 # ==========================================
@@ -1430,22 +1612,29 @@ func calculate_points(sel_tiles: Array) -> int:
 func update_combo_ui():
 	if combo_count <= 1:
 		combo_label.hide()
+		if is_instance_valid(_combo_ring):
+			_combo_ring.visible = false
 		return
 	combo_label.show()
-	combo_label.add_theme_color_override("font_color",
-		Color.ORANGE_RED if combo_count >= 4 else Color.YELLOW)
+	var colors = ThemeTokens.combo_color(combo_count)
+	combo_label.add_theme_color_override("font_color", colors["text"])
+	# Transparent bg — ring draws the background circle behind
+	combo_label.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	if is_instance_valid(_combo_ring):
+		_combo_ring.visible = true
+		_combo_ring.combo_count = combo_count
+		_combo_ring.queue_redraw()
 	var tween = create_tween()
-	tween.tween_property(combo_label, "scale", Vector2(1.3, 1.3), 0.08)
+	tween.tween_property(combo_label, "scale", Vector2(1.2, 1.2), 0.08)
 	tween.tween_property(combo_label, "scale", Vector2.ONE, 0.08)
 
 
 func show_floating_score(points: int, used_combo: int):
 	var label = Label.new()
-	label.text = "+" + str(points) + (" x%d!" % used_combo if used_combo > 1 else "")
-	var font_size = min(55 + (used_combo - 1) * 5, 75)
-	label.add_theme_font_size_override("font_size", font_size)
-	var color = Color.ORANGE_RED if used_combo >= 4 else (Color.YELLOW if used_combo >= 2 else Color.WHITE)
-	label.add_theme_color_override("font_color", color)
+	label.text = "+" + str(points)
+	label.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	label.add_theme_font_size_override("font_size", 52)
+	label.add_theme_color_override("font_color", ThemeTokens.combo_color(used_combo)["bg"])
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size = Vector2(260, 80)
 	var box_center = selection_box.position + selection_box.size / 2.0
@@ -1889,10 +2078,11 @@ func _spawn_tile_burst(pos: Vector2, tile_type: String) -> void:
 	burst.scale_amount_min = 4.5
 	burst.scale_amount_max = 9.0
 	match tile_type:
-		"NEGATIVE": burst.color = Color.PALE_VIOLET_RED
-		"VIRUS":    burst.color = Color.GREEN_YELLOW
-		"JOKER":    burst.color = Color.GOLD
-		_:          burst.color = Color.WHITE
+		"NEGATIVE": burst.color = ThemeTokens.NEG_DARK
+		"VIRUS":    burst.color = ThemeTokens.VIRUS_DARK
+		"JOKER":    burst.color = ThemeTokens.JOKER_STROKE
+		"MYSTERY":  burst.color = ThemeTokens.MYSTERY_REV_BG
+		_:          burst.color = ThemeTokens.MINT
 	add_child(burst)
 	burst.finished.connect(burst.queue_free)
 	burst.emitting = true
