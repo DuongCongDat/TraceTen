@@ -2,6 +2,8 @@ extends BaseTile
 
 const AppleDrawScript = preload("res://scripts/apple_draw.gd")
 
+var _transparent_style: StyleBoxFlat
+
 # Maps fall direction → stem angle (stem points AWAY from fall)
 const DIR_STEM_RAD := {
 	"DOWN":  -PI * 0.5,  # stem up
@@ -17,9 +19,9 @@ func _ready():
 	super._ready()
 
 	# Transparent panel — apple drawing handles the full visual
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color.TRANSPARENT
-	_bg.add_theme_stylebox_override("panel", sb)
+	_transparent_style = StyleBoxFlat.new()
+	_transparent_style.bg_color = Color.TRANSPARENT
+	_bg.add_theme_stylebox_override("panel", _transparent_style)
 
 	_apple_draw = AppleDrawScript.new()
 	_apple_draw.size         = Vector2(80.0, 80.0)
@@ -72,6 +74,9 @@ func deselect():
 
 
 func _update_type_visuals():
+	# BaseTile.update_visuals() resets panel to idle_style (white) — override back to transparent
+	if _transparent_style:
+		_bg.add_theme_stylebox_override("panel", _transparent_style)
 	if _apple_draw:
 		_apple_draw.selected = is_selected
 		_apple_draw.queue_redraw()
