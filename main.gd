@@ -291,6 +291,7 @@ func spawn_single_tile(x, y):
 	add_child(new_tile)
 	new_tile.set_data(spawn_pos, rolled.val, rolled.type)
 	tiles[spawn_pos] = new_tile
+	_set_apple_dir(new_tile, false)
 	return new_tile
 
 
@@ -702,6 +703,7 @@ func check_gravity_level_up():
 			gravity_l4_dir = dirs[randi() % dirs.size()]
 		update_gravity_level_ui()
 		_show_level_up_banner(gravity_level)
+		_refresh_apple_directions(true)
 		# ── Achievement: gravity levels ──
 		if gravity_level == 4:
 			Global.unlock_achievement("gravity_lv4")
@@ -778,6 +780,7 @@ func apply_gravity():
 		var dirs = ["DOWN", "UP", "LEFT", "RIGHT"]
 		gravity_l4_dir = dirs[randi() % dirs.size()]
 		update_gravity_level_ui()
+	_refresh_apple_directions(true)
 
 
 func _move_tile(from_pos: Vector2, to_pos: Vector2):
@@ -924,6 +927,7 @@ func refill_empty_slots():
 				new_tile.scale = Vector2(0.05, 0.05)
 				add_child(new_tile)
 				new_tile.set_data(check_pos, rolled.val, rolled.type)
+				_set_apple_dir(new_tile, false)
 				tiles[check_pos] = new_tile
 				var tween = get_tree().create_tween()
 				tween.tween_property(new_tile, "scale", _tile_normal_scale(), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -1999,8 +2003,12 @@ func _debug_time_up():
 func _debug_next_level():
 	if gameplay_mode != "GRAVITY": return
 	gravity_level = min(gravity_level + 1, 4)
+	if gravity_level == 4:
+		var dirs = ["DOWN", "UP", "LEFT", "RIGHT"]
+		gravity_l4_dir = dirs[randi() % dirs.size()]
 	update_gravity_level_ui()
 	_show_level_up_banner(gravity_level)
+	_refresh_apple_directions(true)
 
 
 func _debug_challenge_next_level():
@@ -2029,6 +2037,23 @@ func _debug_reset_powerups():
 		update_lives_ui()
 	update_power_up_ui()
 	show_floating_text_center("Power-ups reset!", Color.CYAN)
+
+
+# ==========================================
+# GRAVITY APPLE HELPERS
+# ==========================================
+func _set_apple_dir(tile: BaseTile, animate: bool) -> void:
+	if gameplay_mode != "GRAVITY": return
+	if tile.has_method("set_direction"):
+		tile.set_direction(get_gravity_direction(), animate)
+
+
+func _refresh_apple_directions(animate: bool) -> void:
+	if gameplay_mode != "GRAVITY": return
+	var dir := get_gravity_direction()
+	for tile in tiles.values():
+		if tile.has_method("set_direction"):
+			tile.set_direction(dir, animate)
 
 
 func _debug_reset_achievements():

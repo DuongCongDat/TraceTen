@@ -6,11 +6,14 @@ const SCRIPTS = {
 	"MYSTERY":  preload("res://tile_mystery.gd"),
 	"JOKER":    preload("res://tile_joker.gd"),
 	"NEGATIVE": preload("res://tile_negative.gd"),
+	"APPLE":    preload("res://tile_apple.gd"),
 }
 
 static func roll(mode: String) -> Dictionary:
 	if mode == "MUTATION":
 		return _roll_mutation()
+	if mode == "GRAVITY":
+		return {"type": "APPLE", "val": _weighted_normal_val()}
 	return {"type": "NORMAL", "val": _weighted_normal_val()}
 
 # Weighted 1-9: 1-5 appear more often → more valid sum-10 combinations
