@@ -113,6 +113,13 @@ var is_tutorial_active = false
 var _change_level_layer: CanvasLayer = null
 var _settings_layer: CanvasLayer = null
 
+# HUD nodes created dynamically in _setup_hud_visuals()
+var _score_sub_lbl: Label = null
+var _mode_chip_lbl: Label = null
+var _badge_hint: Label = null
+var _badge_shuffle: Label = null
+var _badge_remove: Label = null
+
 var is_dragging = false
 var drag_start_grid = Vector2.ZERO
 var selected_tiles = []
@@ -133,7 +140,7 @@ func _ready():
 
 	# Compute tile_size to fit within screen, leaving room for UI top/bottom
 	var ui_top    = 192.0  # 128px top bar + 64px sub-info bar
-	var ui_bottom = 110.0  # power-up bar
+	var ui_bottom = 170.0  # power-up bar: 120px button + 28px name label + margins
 	var avail_w   = screen_w * 0.90  # 10% horizontal margin (increased from 5%)
 	var avail_h   = screen_h - ui_top - ui_bottom
 	tile_size = int(min(floor(avail_w / grid_cols), floor(avail_h / grid_rows)))
@@ -222,7 +229,7 @@ func _draw():
 	draw_rect(Rect2(0.0, 0.0, sw, sh), ThemeTokens.APP_BG)
 
 	# Power-up bar background
-	draw_rect(Rect2(0.0, sh - 110.0, sw, 110.0), ThemeTokens.PHONE_BG)
+	draw_rect(Rect2(0.0, sh - 170.0, sw, 170.0), ThemeTokens.PHONE_BG)
 
 	# Board background (Mint Cream palette)
 	if tile_size > 0:
@@ -1373,18 +1380,29 @@ func update_power_up_ui():
 	var shuffle_btn = $PowerUpContainer/BtnShuffle
 	var remove_btn  = $PowerUpContainer/BtnRemove
 
-	hint_btn.disabled = hint_count <= 0
-	hint_btn.text = "?" if hint_count <= 1 else "?\n×%d" % hint_count
-
+	# Button disabled state — icon stays constant
+	hint_btn.disabled    = hint_count <= 0
 	shuffle_btn.disabled = shuffle_count <= 0
-	shuffle_btn.text = "↺" if shuffle_count <= 1 else "↺\n×%d" % shuffle_count
+	remove_btn.disabled  = remove_count <= 0 and not is_remove_mode
 
-	if is_remove_mode:
-		remove_btn.text = "✕\ncancel"
-		remove_btn.disabled = false
-	else:
-		remove_btn.disabled = remove_count <= 0
-		remove_btn.text = "✕" if remove_count <= 1 else "✕\n×%d" % remove_count
+	# Badge pills — show count; hide when 0
+	if _badge_hint:
+		_badge_hint.text    = "×%d" % hint_count
+		_badge_hint.visible = hint_count > 0
+	if _badge_shuffle:
+		_badge_shuffle.text    = "×%d" % shuffle_count
+		_badge_shuffle.visible = shuffle_count > 0
+	if _badge_remove:
+		if is_remove_mode:
+			_badge_remove.text    = "cancel"
+			_badge_remove.visible = true
+			var sb_cancel := ThemeTokens.sb_powerup_badge()
+			sb_cancel.bg_color = ThemeTokens.NEG_DARK
+			_badge_remove.add_theme_stylebox_override("normal", sb_cancel)
+		else:
+			_badge_remove.text    = "×%d" % remove_count
+			_badge_remove.visible = remove_count > 0
+			_badge_remove.add_theme_stylebox_override("normal", ThemeTokens.sb_powerup_badge())
 
 	_animate_powerup_change(hint_btn,    _prev_hint_count,    hint_count)
 	_animate_powerup_change(shuffle_btn, _prev_shuffle_count, shuffle_count)
@@ -1442,59 +1460,68 @@ func update_score_ui():
 
 func _set_display_score(val: float):
 	_display_score = int(val)
-	$ScoreLabel.text = "Score: " + str(_display_score)
+	$ScoreLabel.text = _fmt_score(_display_score)
+
+
+func _fmt_score(n: int) -> String:
+	if n >= 1000:
+		return "%d,%03d" % [n / 1000, n % 1000]
+	return str(n)
 
 
 func _setup_hud_visuals():
 	var sw := get_viewport_rect().size.x
 	var sh := get_viewport_rect().size.y
 
-	# --- TOP BAR: PauseButton (top-left, hamburger style) ---
-	$PauseButton.position = Vector2(12, 12)
-	$PauseButton.size = Vector2(68, 68)
-	$PauseButton.custom_minimum_size = Vector2(68, 68)
-	$PauseButton.text = "≡"
-	var sb_pause := StyleBoxFlat.new()
-	ThemeTokens._set_radius(sb_pause, 20)
-	sb_pause.bg_color = Color.WHITE
-	sb_pause.shadow_color = Color(0, 0, 0, 0.10)
-	sb_pause.shadow_size = 6
-	sb_pause.shadow_offset = Vector2(0, 2)
-	$PauseButton.add_theme_stylebox_override("normal",  sb_pause)
-	$PauseButton.add_theme_stylebox_override("hover",   sb_pause)
-	$PauseButton.add_theme_stylebox_override("pressed", sb_pause)
-	$PauseButton.add_theme_color_override("font_color", ThemeTokens.TEXT)
-	$PauseButton.add_theme_font_size_override("font_size", 30)
+	# ── TOP BAR (0–128 px) ──────────────────────────────────────────────────
 
-	# --- TOP BAR: ScoreLabel (centered) ---
-	$ScoreLabel.position = Vector2(88, 8)
-	$ScoreLabel.size = Vector2(sw - 96, 112)
+	# Menu button (left, 88×88)
+	var mb_sz := float(ThemeTokens.MENU_BUTTON_SIZE)
+	$PauseButton.position = Vector2(12, (128.0 - mb_sz) * 0.5)
+	$PauseButton.size = Vector2(mb_sz, mb_sz)
+	$PauseButton.custom_minimum_size = Vector2(mb_sz, mb_sz)
+	$PauseButton.text = "≡"
+	$PauseButton.add_theme_stylebox_override("normal",  ThemeTokens.sb_menu_button())
+	$PauseButton.add_theme_stylebox_override("hover",   ThemeTokens.sb_menu_button())
+	$PauseButton.add_theme_stylebox_override("pressed", ThemeTokens.sb_menu_button())
+	$PauseButton.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	$PauseButton.add_theme_font_size_override("font_size", 38)
+
+	# Score — "SCORE" sub-label + big number, stacked vertically, centered
+	var score_sub_h := 26.0
+	var score_num_h := 56.0
+	var score_total := score_sub_h + 6.0 + score_num_h
+	var score_top   := (128.0 - score_total) * 0.5
+	var score_x     := mb_sz + 16.0
+	var score_w     := sw - (mb_sz + 16.0) * 2.0
+
+	_score_sub_lbl = Label.new()
+	_score_sub_lbl.text = "SCORE"
+	_score_sub_lbl.size = Vector2(score_w, score_sub_h)
+	_score_sub_lbl.position = Vector2(score_x, score_top)
+	_score_sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_score_sub_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_score_sub_lbl.add_theme_font_override("font", ThemeTokens.font_inter(500))
+	_score_sub_lbl.add_theme_font_size_override("font_size", 22)
+	_score_sub_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	add_child(_score_sub_lbl)
+
+	$ScoreLabel.position = Vector2(score_x, score_top + score_sub_h + 6.0)
+	$ScoreLabel.size = Vector2(score_w, score_num_h)
 	$ScoreLabel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	$ScoreLabel.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	$ScoreLabel.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	$ScoreLabel.add_theme_font_size_override("font_size", 52)
+	$ScoreLabel.add_theme_font_size_override("font_size", 44)
 	$ScoreLabel.add_theme_color_override("font_color", ThemeTokens.TEXT)
 
-	$TimeBar.hide()
-
-	# --- SUB-INFO BAR (128..192): TimeLabel (left) ---
-	$TimeLabel.position = Vector2(16, 134)
-	$TimeLabel.size = Vector2(220, 48)
-	$TimeLabel.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	$TimeLabel.add_theme_font_override("font", ThemeTokens.font_mono(400))
-	$TimeLabel.add_theme_font_size_override("font_size", 28)
-	$TimeLabel.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
-
-	# --- SUB-INFO BAR: ComboLabel (compact badge, right side) ---
-	var _badge := 64.0
-	combo_label.position = Vector2(sw - _badge - 8.0, 128.0)
-	combo_label.size = Vector2(_badge, _badge)
+	# Combo badge (right of top bar, same height as menu button)
+	combo_label.position = Vector2(sw - mb_sz - 12.0, (128.0 - mb_sz) * 0.5)
+	combo_label.size = Vector2(mb_sz, mb_sz)
 	combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	combo_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	combo_label.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	combo_label.add_theme_font_size_override("font_size", 24)
+	combo_label.add_theme_font_override("font", ThemeTokens.font_mono(800))
+	combo_label.add_theme_font_size_override("font_size", 26)
 
-	# ComboRing — added just before combo_label in tree so it renders behind the text
 	var ring := ComboRing.new()
 	ring.name = "ComboRing"
 	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1505,41 +1532,67 @@ func _setup_hud_visuals():
 	move_child(ring, combo_label.get_index())
 	_combo_ring = ring
 
-	# --- SUB-INFO BAR: GravityLevelLabel (center) ---
-	gravity_level_label.position = Vector2(sw * 0.5 - 80, 134)
-	gravity_level_label.size = Vector2(160, 48)
+	$TimeBar.hide()
+
+	# ── SUB-INFO BAR (128–192 px) ───────────────────────────────────────────
+
+	var sub_y    := 136.0
+	var sub_h    := 48.0
+	var chip_w   := 140.0
+
+	# Mode chip (right) — always visible
+	_mode_chip_lbl = Label.new()
+	_mode_chip_lbl.text = gameplay_mode
+	_mode_chip_lbl.size = Vector2(chip_w, sub_h)
+	_mode_chip_lbl.position = Vector2(sw - chip_w - 12.0, sub_y)
+	_mode_chip_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mode_chip_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_mode_chip_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700))
+	_mode_chip_lbl.add_theme_font_size_override("font_size", 20)
+	_mode_chip_lbl.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
+	_mode_chip_lbl.add_theme_stylebox_override("normal", ThemeTokens.sb_mode_chip())
+	add_child(_mode_chip_lbl)
+
+	# Timer / Level (left)
+	$TimeLabel.position = Vector2(16.0, sub_y)
+	$TimeLabel.size = Vector2(240.0, sub_h)
+	$TimeLabel.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	$TimeLabel.add_theme_font_override("font", ThemeTokens.font_mono(600))
+	$TimeLabel.add_theme_font_size_override("font_size", 26)
+	$TimeLabel.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+
+	# Gravity-specific labels
+	gravity_level_label.position = Vector2(260.0, sub_y)
+	gravity_level_label.size = Vector2(200.0, sub_h)
 	gravity_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	gravity_level_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	gravity_level_label.add_theme_font_override("font", ThemeTokens.font_mono(700))
 	gravity_level_label.add_theme_font_size_override("font_size", 26)
 	gravity_level_label.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 
-	# --- SUB-INFO BAR: LivesLabel (right) ---
-	lives_label.position = Vector2(sw - 200, 134)
-	lives_label.size = Vector2(188, 48)
+	lives_label.position = Vector2(sw - chip_w - 170.0, sub_y)
+	lives_label.size = Vector2(150.0, sub_h)
 	lives_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lives_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	lives_label.add_theme_font_size_override("font_size", 26)
 
-	# --- SUB-INFO BAR: ChallengeLevelLabel (left) ---
-	challenge_level_label.position = Vector2(16, 134)
-	challenge_level_label.size = Vector2(sw * 0.5 - 16, 48)
+	# Challenge-specific labels
+	challenge_level_label.position = Vector2(16.0, sub_y)
+	challenge_level_label.size = Vector2(sw * 0.5, sub_h)
 	challenge_level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	challenge_level_label.add_theme_font_size_override("font_size", 24)
+	challenge_level_label.add_theme_font_size_override("font_size", 22)
+	challenge_level_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
 
-	# --- SUB-INFO BAR: ChallengeConstraintLabel (right) ---
-	challenge_constraint_label.position = Vector2(sw * 0.5, 134)
-	challenge_constraint_label.size = Vector2(sw * 0.5 - 84, 48)
+	challenge_constraint_label.position = Vector2(sw * 0.5, sub_y)
+	challenge_constraint_label.size = Vector2(sw * 0.5 - chip_w - 20.0, sub_h)
 	challenge_constraint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	challenge_constraint_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	challenge_constraint_label.add_theme_font_size_override("font_size", 22)
+	challenge_constraint_label.add_theme_font_size_override("font_size", 20)
+	challenge_constraint_label.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 
-	# --- SUB-INFO BAR: BtnChangeLevelHUD (far right) ---
-	btn_change_level_hud.position = Vector2(sw - 80, 134)
-	btn_change_level_hud.size = Vector2(72, 48)
-	btn_change_level_hud.add_theme_font_size_override("font_size", 18)
+	btn_change_level_hud.hide()
 
-	# --- SELECTION BOX --- transparent fill (border handled in _draw)
+	# ── SELECTION BOX ───────────────────────────────────────────────────────
 	selection_box.color = Color(0, 0, 0, 0)
 	var _sum_lbl = selection_box.get_node("SumLabel")
 	_sum_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1547,32 +1600,67 @@ func _setup_hud_visuals():
 	_sum_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
 	_sum_lbl.add_theme_font_size_override("font_size", 36)
 
-	# --- POWER-UP BAR (bottom) ---
-	var btn_size := 88.0
-	var btn_gap  := 24.0
+	# ── POWER-UP BAR (bottom) ───────────────────────────────────────────────
+	var btn_size := float(ThemeTokens.POWERUP_BUTTON_SIZE)  # 120
+	var btn_gap  := 32.0
 	var total_btn_w := 3.0 * btn_size + 2.0 * btn_gap
-	var bx := (sw - total_btn_w) * 0.5
-	var by := sh - btn_size - 16.0
+	var bx   := (sw - total_btn_w) * 0.5
+	var by   := sh - btn_size - 44.0
+	var nm_y := by + btn_size + 8.0   # name-label row y
 
 	$PowerUpContainer.position = Vector2(bx, by)
 	$PowerUpContainer.size = Vector2(total_btn_w, btn_size)
 	$PowerUpContainer.add_theme_constant_override("separation", int(btn_gap))
 
-	var sb_pu_disabled := StyleBoxFlat.new()
-	ThemeTokens._set_radius(sb_pu_disabled, ThemeTokens.POWERUP_RADIUS)
-	sb_pu_disabled.bg_color = Color(0.87, 0.84, 0.77)
+	var sb_pu_dis := StyleBoxFlat.new()
+	ThemeTokens._set_radius(sb_pu_dis, ThemeTokens.POWERUP_RADIUS)
+	sb_pu_dis.bg_color = Color(0.78, 0.74, 0.66, 0.55)
 
-	var _pu_btns := [$PowerUpContainer/BtnHint, $PowerUpContainer/BtnShuffle, $PowerUpContainer/BtnRemove]
-	for btn in _pu_btns:
+	var btn_icons  := ["?", "↺", "✕"]
+	var btn_names  := ["HINT", "SHUFFLE", "REMOVE"]
+	var pu_btns    := [$PowerUpContainer/BtnHint, $PowerUpContainer/BtnShuffle, $PowerUpContainer/BtnRemove]
+
+	for i in 3:
+		var btn: Button = pu_btns[i]
 		btn.custom_minimum_size = Vector2(btn_size, btn_size)
+		btn.text = btn_icons[i]
 		btn.add_theme_stylebox_override("normal",   ThemeTokens.sb_powerup_button())
 		btn.add_theme_stylebox_override("hover",    ThemeTokens.sb_powerup_button())
 		btn.add_theme_stylebox_override("pressed",  ThemeTokens.sb_powerup_button())
-		btn.add_theme_stylebox_override("disabled", sb_pu_disabled)
+		btn.add_theme_stylebox_override("disabled", sb_pu_dis)
 		btn.add_theme_font_override("font", ThemeTokens.font_mono(700))
-		btn.add_theme_font_size_override("font_size", 30)
+		btn.add_theme_font_size_override("font_size", 44)
 		btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
-		btn.add_theme_color_override("font_disabled_color", Color(0.65, 0.60, 0.52))
+		btn.add_theme_color_override("font_disabled_color", Color(0.60, 0.55, 0.48))
+
+		# Badge pill (top-right of button, count)
+		var badge := Label.new()
+		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		badge.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+		badge.add_theme_font_override("font", ThemeTokens.font_mono(700))
+		badge.add_theme_font_size_override("font_size", 22)
+		badge.add_theme_color_override("font_color", Color.WHITE)
+		badge.add_theme_stylebox_override("normal", ThemeTokens.sb_powerup_badge())
+		badge.size = Vector2(56.0, 36.0)
+		badge.position = Vector2(bx + i * (btn_size + btn_gap) + btn_size - 40.0, by - 20.0)
+		badge.z_index = 5
+		add_child(badge)
+
+		# Name label (below button)
+		var nm := Label.new()
+		nm.text = btn_names[i]
+		nm.size = Vector2(btn_size, 30.0)
+		nm.position = Vector2(bx + i * (btn_size + btn_gap), nm_y)
+		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		nm.add_theme_font_override("font", ThemeTokens.font_inter(600))
+		nm.add_theme_font_size_override("font_size", 20)
+		nm.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+		add_child(nm)
+
+		match i:
+			0: _badge_hint    = badge
+			1: _badge_shuffle = badge
+			2: _badge_remove  = badge
 
 	queue_redraw()
 
