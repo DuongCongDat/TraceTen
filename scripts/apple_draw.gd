@@ -51,11 +51,11 @@ func _draw():
 	draw_set_transform(Vector2(cx, cy), rot, Vector2.ONE)
 
 	# Body fill
-	draw_polygon(APPLE_POLY, PackedColorArray([fill]))
+	draw_polygon(_poly, PackedColorArray([fill]))
 
 	# Outline — close the polygon by appending first point
-	var outline := PackedVector2Array(APPLE_POLY)
-	outline.append(APPLE_POLY[0])
+	var outline := PackedVector2Array(_poly)
+	outline.append(_poly[0])
 	draw_polyline(outline, line, 2.5, true)
 
 	# Stem — from the dimple bottom up, slightly curved (two-segment approximation)
