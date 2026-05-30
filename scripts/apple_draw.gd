@@ -20,20 +20,20 @@ func _ready() -> void:
 		Vector2(10,  -26),
 		Vector2(17,  -28),  # right bump peak — wider bump
 		Vector2(23,  -22),  # bump outer shoulder — wider
-		# Right body — widened at upper zone (~2/5 from top)
-		Vector2(29,  -12),  # upper-right (was 25,-14)
-		Vector2(32,    0),  # 2/5 zone — widest upper area (was 27,-3)
-		Vector2(32,   10),  # widest mid (was 27,9)
-		Vector2(28,   21),  # lower-right (was 24,21)
-		Vector2(19,   29),  # bottom-right curve
+		# Right body — widest zone shifted UP to ~1/3 from top
+		Vector2(30,  -13),  # upper-right shoulder
+		Vector2(33,   -6),  # widest point (shifted up)
+		Vector2(32,    4),  # still wide, tapering begins
+		Vector2(27,   17),  # lower-right narrows faster
+		Vector2(19,   28),  # bottom-right curve
 		Vector2( 9,   33),
 		Vector2( 0,   34),  # bottom center
 		Vector2(-9,   33),
-		Vector2(-19,  29),  # bottom-left curve
-		Vector2(-28,  21),
-		Vector2(-32,  10),  # widest mid
-		Vector2(-32,   0),  # 2/5 zone
-		Vector2(-29, -12),
+		Vector2(-19,  28),  # bottom-left curve
+		Vector2(-27,  17),
+		Vector2(-32,   4),  # still wide
+		Vector2(-33,  -6),  # widest point (shifted up)
+		Vector2(-30, -13),
 		Vector2(-23, -22),
 		Vector2(-17, -28),  # left bump peak
 		Vector2(-10, -26),

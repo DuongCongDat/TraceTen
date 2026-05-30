@@ -32,6 +32,7 @@ func _ready():
 
 	_label.add_theme_color_override("font_color", Color.WHITE)
 	_label.add_theme_font_size_override("font_size", 44)
+	_label.offset_top = 10  # shift number down within the apple body
 
 
 func set_direction(dir: String, animate: bool = true):
