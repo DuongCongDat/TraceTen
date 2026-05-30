@@ -5,35 +5,40 @@ var selected: bool = false
 # Stem angle in radians; -PI/2 = stem pointing up (DOWN fall direction)
 var stem_rad: float = -PI * 0.5
 
-# Apple silhouette — 22 points, centered at origin, stem/dimple pointing in -Y direction.
-# Key feature: dimple at top center (y≈-20) is LOWER than the two bump peaks (y≈-28),
-# giving the characteristic apple double-lobe top.
-const APPLE_POLY := PackedVector2Array([
-	Vector2(-4,  -21),  # left rim of dimple
-	Vector2( 0,  -19),  # dimple bottom (deepest dip)
-	Vector2( 4,  -21),  # right rim of dimple
-	Vector2( 9,  -27),  # rising toward right bump
-	Vector2(15,  -29),  # right bump peak
-	Vector2(21,  -24),  # right bump outer shoulder
-	Vector2(25,  -14),  # upper right body
-	Vector2(27,   -3),  # right upper
-	Vector2(27,    9),  # right widest
-	Vector2(24,   21),  # right lower
-	Vector2(17,   29),  # bottom-right curve
-	Vector2( 8,   33),  # bottom-right corner
-	Vector2( 0,   34),  # bottom center
-	Vector2(-8,   33),  # bottom-left corner
-	Vector2(-17,  29),  # bottom-left curve
-	Vector2(-24,  21),  # left lower
-	Vector2(-27,   9),  # left widest
-	Vector2(-27,  -3),  # left upper
-	Vector2(-25, -14),  # upper left body
-	Vector2(-21, -24),  # left bump outer shoulder
-	Vector2(-15, -29),  # left bump peak
-	Vector2(-9,  -27),  # descending toward dimple
-])
+# Apple silhouette — initialized in _ready() (PackedVector2Array can't be a GDScript const).
+# 22 points, centered at origin, stem/dimple pointing in -Y direction.
+# Dimple at top center (y≈-20) is LOWER than the two bump peaks (y≈-28).
+var _poly: PackedVector2Array
+
+func _ready() -> void:
+	_poly = PackedVector2Array([
+		Vector2(-4,  -21),
+		Vector2( 0,  -19),
+		Vector2( 4,  -21),
+		Vector2( 9,  -27),
+		Vector2(15,  -29),
+		Vector2(21,  -24),
+		Vector2(25,  -14),
+		Vector2(27,   -3),
+		Vector2(27,    9),
+		Vector2(24,   21),
+		Vector2(17,   29),
+		Vector2( 8,   33),
+		Vector2( 0,   34),
+		Vector2(-8,   33),
+		Vector2(-17,  29),
+		Vector2(-24,  21),
+		Vector2(-27,   9),
+		Vector2(-27,  -3),
+		Vector2(-25, -14),
+		Vector2(-21, -24),
+		Vector2(-15, -29),
+		Vector2(-9,  -27),
+	])
 
 func _draw():
+	if _poly.is_empty():
+		return
 	var cx := size.x * 0.5
 	var cy := size.y * 0.5 + 2.0
 
