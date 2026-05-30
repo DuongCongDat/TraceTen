@@ -2,12 +2,36 @@ class_name AppleDraw
 extends Control
 
 var selected: bool = false
-# Stem angle in radians; -PI/2 = pointing up (DOWN fall), animated via Tween
+# Stem angle in radians; -PI/2 = stem pointing up (DOWN fall direction)
 var stem_rad: float = -PI * 0.5
 
-const BODY_RADIUS := 27.0
-const STEM_LEN    := 11.0
-const STEM_WIDTH  := 3.2
+# Apple silhouette — 22 points, centered at origin, stem/dimple pointing in -Y direction.
+# Key feature: dimple at top center (y≈-20) is LOWER than the two bump peaks (y≈-28),
+# giving the characteristic apple double-lobe top.
+const APPLE_POLY := PackedVector2Array([
+	Vector2(-4,  -21),  # left rim of dimple
+	Vector2( 0,  -19),  # dimple bottom (deepest dip)
+	Vector2( 4,  -21),  # right rim of dimple
+	Vector2( 9,  -27),  # rising toward right bump
+	Vector2(15,  -29),  # right bump peak
+	Vector2(21,  -24),  # right bump outer shoulder
+	Vector2(25,  -14),  # upper right body
+	Vector2(27,   -3),  # right upper
+	Vector2(27,    9),  # right widest
+	Vector2(24,   21),  # right lower
+	Vector2(17,   29),  # bottom-right curve
+	Vector2( 8,   33),  # bottom-right corner
+	Vector2( 0,   34),  # bottom center
+	Vector2(-8,   33),  # bottom-left corner
+	Vector2(-17,  29),  # bottom-left curve
+	Vector2(-24,  21),  # left lower
+	Vector2(-27,   9),  # left widest
+	Vector2(-27,  -3),  # left upper
+	Vector2(-25, -14),  # upper left body
+	Vector2(-21, -24),  # left bump outer shoulder
+	Vector2(-15, -29),  # left bump peak
+	Vector2(-9,  -27),  # descending toward dimple
+])
 
 func _draw():
 	var cx := size.x * 0.5
@@ -16,19 +40,27 @@ func _draw():
 	var fill := ThemeTokens.APPLE_SEL_FILL if selected else ThemeTokens.APPLE_FILL
 	var line := ThemeTokens.APPLE_SEL_LINE if selected else ThemeTokens.APPLE_LINE
 
-	# Body fill + outline
-	draw_circle(Vector2(cx, cy), BODY_RADIUS, fill)
-	draw_arc(Vector2(cx, cy), BODY_RADIUS, 0.0, TAU, 48, line, 2.5, true)
+	# Rotate entire apple so stem points in stem_rad direction.
+	# APPLE_POLY has stem pointing UP (-Y), which equals stem_rad = -PI/2 → rotation = 0.
+	var rot := stem_rad + PI * 0.5
+	draw_set_transform(Vector2(cx, cy), rot, Vector2.ONE)
 
-	# Stem: starts just outside the body edge, extends outward
-	var dir_vec := Vector2(cos(stem_rad), sin(stem_rad))
-	var stem_base := Vector2(cx, cy) + dir_vec * (BODY_RADIUS - 2.0)
-	var stem_tip  := Vector2(cx, cy) + dir_vec * (BODY_RADIUS + STEM_LEN)
-	draw_line(stem_base, stem_tip, ThemeTokens.APPLE_STEM, STEM_WIDTH, true)
+	# Body fill
+	draw_polygon(APPLE_POLY, PackedColorArray([fill]))
 
-	# Highlight — small arc on the side opposite the stem (inner glow feel)
-	var hi_angle := stem_rad + PI  # opposite the stem
-	var hi_center := Vector2(cx, cy) + Vector2(cos(hi_angle), sin(hi_angle)) * (BODY_RADIUS * 0.55)
-	draw_arc(hi_center, BODY_RADIUS * 0.30,
-		hi_angle + deg_to_rad(150), hi_angle + deg_to_rad(320),
-		10, Color(1.0, 1.0, 1.0, 0.38), 2.5, true)
+	# Outline — close the polygon by appending first point
+	var outline := PackedVector2Array(APPLE_POLY)
+	outline.append(APPLE_POLY[0])
+	draw_polyline(outline, line, 2.5, true)
+
+	# Stem — from the dimple bottom up, slightly curved (two-segment approximation)
+	draw_line(Vector2(0, -19), Vector2(2, -30), ThemeTokens.APPLE_STEM, 3.2, true)
+	draw_line(Vector2(2, -30), Vector2(5, -38), ThemeTokens.APPLE_STEM, 2.8, true)
+
+	# Highlight — small arc in the inner upper-left area of the apple
+	draw_arc(Vector2(-8, -4), 10.0,
+		deg_to_rad(210), deg_to_rad(320), 8,
+		Color(1.0, 1.0, 1.0, 0.40), 2.5, true)
+
+	# Reset transform
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

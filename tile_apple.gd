@@ -31,7 +31,7 @@ func _ready():
 	_bg.move_child(_apple_draw, 0)  # behind Label
 
 	_label.add_theme_color_override("font_color", Color.WHITE)
-	_label.add_theme_font_size_override("font_size", 44)
+	_label.add_theme_font_size_override("font_size", 30)
 
 
 func set_direction(dir: String, animate: bool = true):
