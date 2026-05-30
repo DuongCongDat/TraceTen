@@ -15,6 +15,9 @@ const MINT_DARK    = Color(0.306, 0.647, 0.518)
 const MINT_SOFT    = Color(0.804, 0.914, 0.855)
 const CHIP_BG      = Color(1.0,   1.0,   1.0  )
 
+const CARD_BG      = Color(0.984, 0.965, 0.925)   # #fbf6ec — overlay cards
+const DIM_BG       = Color(0.110, 0.125, 0.118, 0.62)  # game-over dim
+
 const JOKER_A      = Color(1.000, 0.902, 0.659)
 const JOKER_B      = Color(1.000, 0.780, 0.522)
 const JOKER_STROKE = Color(0.851, 0.600, 0.251)
@@ -33,6 +36,15 @@ const MYSTERY_REV_TEXT = Color(0.941, 0.933, 0.894)
 const NEG_BG       = Color(0.961, 0.769, 0.769)
 const NEG_DARK     = Color(0.769, 0.416, 0.416)
 
+# Apple tile (Gravity mode) ―― flat illustration colors
+const APPLE_FILL   = Color(0.941, 0.384, 0.361)   # #f0625c coral red
+const APPLE_LINE   = Color(0.761, 0.239, 0.204)   # #c23d34 dark maroon
+const APPLE_HI     = Color(1.000, 0.831, 0.812)   # #ffd4cf highlight
+const APPLE_STEM   = Color(0.478, 0.290, 0.180)   # #7a4a2e
+const APPLE_LEAF   = Color(0.655, 0.812, 0.549)   # #a7cf8c
+const APPLE_SEL_FILL = Color(0.424, 0.769, 0.627) # #6cc4a0 selected (green apple)
+const APPLE_SEL_LINE = Color(0.227, 0.553, 0.431) # #3a8d6e
+
 # =============================================================================
 # Spacing & radii (all ×2 from 360dp reference — project viewport = 720px)
 # =============================================================================
@@ -43,6 +55,10 @@ const CHIP_RADIUS    = 28
 const POWERUP_RADIUS = 44
 const TILE_GAP       = 8
 const BADGE_RADIUS   = 999
+const MENU_BUTTON_SIZE   = 88   # 44dp × 2 — top-bar menu button
+const POWERUP_BUTTON_SIZE = 120 # 60dp × 2 — power-up circle buttons
+const CARD_RADIUS    = 52       # 26dp × 2 — overlay cards (pause, game-over)
+const ICON_CHIP_SIZE = 112      # 56dp × 2 — game-over icon chip
 
 # =============================================================================
 # Helpers: corner radius — safe for all Godot 4.x versions
@@ -143,6 +159,32 @@ static func sb_sum_bubble(valid: bool) -> StyleBoxFlat:
 	sb.content_margin_right  = 28.0
 	sb.content_margin_top    = 8.0
 	sb.content_margin_bottom = 8.0
+	return sb
+
+static func sb_menu_button() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = CHIP_BG
+	_set_radius(sb, CHIP_RADIUS)
+	sb.border_width_bottom = 2
+	sb.border_color = Color(0, 0, 0, 0.05)
+	sb.shadow_color = Color(0, 0, 0, 0.12)
+	sb.shadow_size  = 6
+	sb.shadow_offset = Vector2(0, 2)
+	return sb
+
+static func sb_card() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = CARD_BG
+	_set_radius(sb, CARD_RADIUS)
+	sb.shadow_color = Color(0, 0, 0, 0.18)
+	sb.shadow_size  = 24
+	sb.shadow_offset = Vector2(0, 8)
+	return sb
+
+static func sb_icon_chip(accent: Color) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = accent
+	_set_radius(sb, CHIP_RADIUS)
 	return sb
 
 # Returns combo color dict for a given combo_count.
