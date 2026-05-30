@@ -35,7 +35,7 @@ func _ready():
 func set_direction(dir: String, animate: bool = true):
 	if not _apple_draw:
 		return
-	var target := DIR_STEM_RAD.get(dir, -PI * 0.5)
+	var target: float = DIR_STEM_RAD.get(dir, -PI * 0.5)
 	if animate:
 		if _stem_tween and _stem_tween.is_running():
 			_stem_tween.kill()
