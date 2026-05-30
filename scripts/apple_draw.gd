@@ -12,28 +12,31 @@ var _poly: PackedVector2Array
 
 func _ready() -> void:
 	_poly = PackedVector2Array([
+		# Dimple (top center — stem attaches here)
 		Vector2(-4,  -21),
 		Vector2( 0,  -19),
 		Vector2( 4,  -21),
-		Vector2( 9,  -27),
-		Vector2(15,  -29),
-		Vector2(21,  -24),
-		Vector2(25,  -14),
-		Vector2(27,   -3),
-		Vector2(27,    9),
-		Vector2(24,   21),
-		Vector2(17,   29),
-		Vector2( 8,   33),
-		Vector2( 0,   34),
-		Vector2(-8,   33),
-		Vector2(-17,  29),
-		Vector2(-24,  21),
-		Vector2(-27,   9),
-		Vector2(-27,  -3),
-		Vector2(-25, -14),
-		Vector2(-21, -24),
-		Vector2(-15, -29),
-		Vector2(-9,  -27),
+		# Right bump
+		Vector2(10,  -26),
+		Vector2(17,  -28),  # right bump peak — wider bump
+		Vector2(23,  -22),  # bump outer shoulder — wider
+		# Right body — widened at upper zone (~2/5 from top)
+		Vector2(29,  -12),  # upper-right (was 25,-14)
+		Vector2(32,    0),  # 2/5 zone — widest upper area (was 27,-3)
+		Vector2(32,   10),  # widest mid (was 27,9)
+		Vector2(28,   21),  # lower-right (was 24,21)
+		Vector2(19,   29),  # bottom-right curve
+		Vector2( 9,   33),
+		Vector2( 0,   34),  # bottom center
+		Vector2(-9,   33),
+		Vector2(-19,  29),  # bottom-left curve
+		Vector2(-28,  21),
+		Vector2(-32,  10),  # widest mid
+		Vector2(-32,   0),  # 2/5 zone
+		Vector2(-29, -12),
+		Vector2(-23, -22),
+		Vector2(-17, -28),  # left bump peak
+		Vector2(-10, -26),
 	])
 
 func _draw():
