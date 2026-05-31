@@ -39,9 +39,10 @@ static func _roll_mutation() -> Dictionary:
 		type = "NEGATIVE"
 
 	var r = randf()
-	if r < 0.15:    type = "MYSTERY"
-	elif r < 0.20:  type = "JOKER"
-	elif r < 0.30:  type = "VIRUS"
+	if r < 0.195:   type = "MYSTERY"  # 19.5%
+	elif r < 0.205: type = "JOKER"    # 1%
+	elif r < 0.265: type = "VIRUS"    # 6%
+	# else 73.5% → giữ NORMAL/NEGATIVE từ roll p
 
 	return {"type": type, "val": val}
 

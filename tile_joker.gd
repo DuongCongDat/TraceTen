@@ -8,7 +8,6 @@ func _ready():
 	_apply_joker_style()
 	_add_gradient_bg()
 	_add_jester()
-	_add_sparkle()
 	_label.text = ""  # jester replaces the number
 
 func _apply_joker_style():
@@ -51,15 +50,6 @@ func _add_jester():
 	draw.position     = Vector2(14, 8)
 	draw.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bg.add_child(draw)
-
-func _add_sparkle():
-	var spark := ColorRect.new()
-	spark.size     = Vector2(8, 8)
-	spark.position = Vector2(62, 62)
-	spark.color    = Color.WHITE
-	spark.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Rounded pill via a Panel would be cleaner, but ColorRect is fine at this scale
-	_bg.add_child(spark)
 
 func _update_type_visuals():
 	_label.text = ""

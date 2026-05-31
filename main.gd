@@ -507,13 +507,18 @@ func evaluate_selection():
 
 		var eaten_count = selected_tiles.size()  # capture before clear
 
-		for pos in selected_tiles:
+		for i in selected_tiles.size():
+			var pos = selected_tiles[i]
 			if tiles.has(pos):
 				var t = tiles[pos]
 				_spawn_tile_burst(t.position, t.tile_type)
 				tiles.erase(pos)
+				var delay := float(i) * 0.03
 				var tw = t.create_tween()
-				tw.tween_property(t, "scale", Vector2.ZERO, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+				if delay > 0.0:
+					tw.tween_interval(delay)
+				tw.tween_property(t, "scale", Vector2(1.15, 1.15), 0.06).set_trans(Tween.TRANS_SINE)
+				tw.tween_property(t, "scale", Vector2.ZERO, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 				tw.tween_callback(t.queue_free)
 
 		selected_tiles.clear()
@@ -935,14 +940,16 @@ func kill_tile_from_virus(pos: Vector2):
 
 	if candidates.size() > 0:
 		var target: Vector2 = candidates[randi() % candidates.size()]
-		var infect_tile = tiles[target]
-		infect_tile.set_script(TileFactory.SCRIPTS["VIRUS"])
-		infect_tile.set_process(true)
-		infect_tile.tile_type = "VIRUS"
-		infect_tile.value = randi_range(1, 9)
-		infect_tile.virus_timer = 0.0
-		infect_tile.is_selected = false
-		infect_tile.update_visuals()
+		var old_tile = tiles[target]
+		var px_pos = old_tile.position
+		old_tile.queue_free()
+		tiles.erase(target)
+		var new_virus = TileFactory.make("VIRUS")
+		new_virus.position = px_pos
+		new_virus.scale = _tile_normal_scale()
+		add_child(new_virus)
+		new_virus.set_data(target, randi_range(1, 9), "VIRUS")
+		tiles[target] = new_virus
 
 	# Penalty always applies
 	score = max(0, score - VIRUS_SPREAD_PENALTY)
@@ -1813,9 +1820,10 @@ func update_combo_ui():
 		_combo_ring.visible = true
 		_combo_ring.combo_count = combo_count
 		_combo_ring.queue_redraw()
+	var peak: float = 1.2 + min(combo_count - 2, 3) * 0.1  # x2=1.2 x3=1.3 x4=1.4 x5+=1.5
 	var tween = create_tween()
-	tween.tween_property(combo_label, "scale", Vector2(1.2, 1.2), 0.08)
-	tween.tween_property(combo_label, "scale", Vector2.ONE, 0.08)
+	tween.tween_property(combo_label, "scale", Vector2(peak, peak), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(combo_label, "scale", Vector2.ONE, 0.10).set_trans(Tween.TRANS_CUBIC)
 
 
 func show_floating_score(points: int, used_combo: int):
@@ -1828,15 +1836,17 @@ func show_floating_score(points: int, used_combo: int):
 	label.add_theme_stylebox_override("normal", ThemeTokens.sb_score_chip(used_combo))
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	# width fits text: each char ~15px + 40px horizontal margin from stylebox
 	var pill_w := float(label.text.length()) * 15.0 + 40.0
 	label.size = Vector2(pill_w, 36)
 	var box_center = selection_box.position + selection_box.size / 2.0
 	label.position = box_center - Vector2(pill_w * 0.5, 18)
+	label.scale = Vector2(1.4, 1.4)
+	label.pivot_offset = Vector2(pill_w * 0.5, 18.0)
 	add_child(label)
-	var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(label, "position", label.position - Vector2(0, 80), 1.2)
-	tween.parallel().tween_property(label, "modulate:a", 0.0, 1.2)
+	var tween = create_tween()
+	tween.tween_property(label, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(label, "position", label.position - Vector2(0, 80), 1.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 1.3)
 	tween.tween_callback(label.queue_free)
 
 
@@ -2298,14 +2308,14 @@ func _spawn_tile_burst(pos: Vector2, tile_type: String) -> void:
 	burst.position = pos
 	burst.one_shot = true
 	burst.explosiveness = 1.0
-	burst.amount = 12
-	burst.lifetime = 0.5
-	burst.initial_velocity_min = 90.0
-	burst.initial_velocity_max = 188.0
+	burst.amount = 18
+	burst.lifetime = 0.55
+	burst.initial_velocity_min = 110.0
+	burst.initial_velocity_max = 230.0
 	burst.spread = 180.0
-	burst.gravity = Vector2(0, 400)
-	burst.scale_amount_min = 4.5
-	burst.scale_amount_max = 9.0
+	burst.gravity = Vector2(0, 360)
+	burst.scale_amount_min = 5.0
+	burst.scale_amount_max = 11.0
 	match tile_type:
 		"NEGATIVE": burst.color = ThemeTokens.NEG_DARK
 		"VIRUS":    burst.color = ThemeTokens.VIRUS_DARK
@@ -2315,3 +2325,20 @@ func _spawn_tile_burst(pos: Vector2, tile_type: String) -> void:
 	add_child(burst)
 	burst.finished.connect(burst.queue_free)
 	burst.emitting = true
+
+	var sparkle = CPUParticles2D.new()
+	sparkle.position = pos
+	sparkle.one_shot = true
+	sparkle.explosiveness = 1.0
+	sparkle.amount = 8
+	sparkle.lifetime = 0.30
+	sparkle.initial_velocity_min = 55.0
+	sparkle.initial_velocity_max = 130.0
+	sparkle.spread = 180.0
+	sparkle.gravity = Vector2(0, 80)
+	sparkle.scale_amount_min = 2.0
+	sparkle.scale_amount_max = 4.0
+	sparkle.color = Color(1.0, 1.0, 1.0, 0.9)
+	add_child(sparkle)
+	sparkle.finished.connect(sparkle.queue_free)
+	sparkle.emitting = true
