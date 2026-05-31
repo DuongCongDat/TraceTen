@@ -101,13 +101,13 @@ const LIST: Array = [
 	{
 		"id": "challenge_l6",
 		"name": "Cube Master",
-		"desc": "Unlock Challenge Level 6 (Coral Reef).",
+		"desc": "Unlock Adventure Level 6 (Coral Reef).",
 		"target": 1,
 	},
 	{
 		"id": "challenge_l12",
 		"name": "Cosmos",
-		"desc": "Unlock Challenge Level 12.",
+		"desc": "Unlock Adventure Level 12.",
 		"target": 1,
 	},
 	{

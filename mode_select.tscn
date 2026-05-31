@@ -159,7 +159,7 @@ theme_override_font_sizes/font_size = 40
 theme_override_styles/normal = ExtResource("1_style")
 theme_override_styles/hover = ExtResource("2_hover")
 theme_override_styles/pressed = ExtResource("3_pressed")
-text = "Challenge"
+text = "Adventure"
 
 [node name="LblChallengeDesc" type="Label" parent="MarginContainer/MainLayout/Modes/ChallengeCard"]
 layout_mode = 2

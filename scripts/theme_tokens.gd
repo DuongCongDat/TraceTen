@@ -52,11 +52,11 @@ const TILE_RADIUS    = 12
 const BOARD_RADIUS   = 44
 const BOARD_PADDING  = 20
 const CHIP_RADIUS    = 28
-const POWERUP_RADIUS = 44
+const POWERUP_RADIUS = 36
 const TILE_GAP       = 8
 const BADGE_RADIUS   = 999
 const MENU_BUTTON_SIZE   = 88   # 44dp × 2 — top-bar menu button
-const POWERUP_BUTTON_SIZE = 120 # 60dp × 2 — power-up circle buttons
+const POWERUP_BUTTON_SIZE = 96  # 48dp × 2 — power-up circle buttons
 const CARD_RADIUS    = 52       # 26dp × 2 — overlay cards (pause, game-over)
 const ICON_CHIP_SIZE = 112      # 56dp × 2 — game-over icon chip
 
@@ -151,14 +151,28 @@ static func sb_powerup_badge() -> StyleBoxFlat:
 	sb.content_margin_bottom = 4.0
 	return sb
 
-static func sb_sum_bubble(valid: bool) -> StyleBoxFlat:
+static func sb_sum_bubble(state: String) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = MINT_DARK if valid else Color(0.239, 0.290, 0.267)
+	match state:
+		"exact": sb.bg_color = MINT_DARK
+		"over":  sb.bg_color = Color(0.749, 0.20, 0.20)
+		_:       sb.bg_color = Color(0.38, 0.38, 0.36)
 	_set_radius(sb, BADGE_RADIUS)
 	sb.content_margin_left   = 28.0
 	sb.content_margin_right  = 28.0
 	sb.content_margin_top    = 8.0
 	sb.content_margin_bottom = 8.0
+	return sb
+
+
+static func sb_score_chip(combo: int) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = combo_color(combo)["bg"]
+	_set_radius(sb, BADGE_RADIUS)
+	sb.content_margin_left   = 20.0
+	sb.content_margin_right  = 20.0
+	sb.content_margin_top    = 6.0
+	sb.content_margin_bottom = 6.0
 	return sb
 
 static func sb_menu_button() -> StyleBoxFlat:

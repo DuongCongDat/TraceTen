@@ -1,7 +1,7 @@
 extends Control
 
 const MODES = ["CLASSIC", "GRAVITY", "MUTATION", "ZEN", "CHALLENGE"]
-const MODE_LABELS = ["Classic", "Gravity", "Mutation", "Zen", "Challenge"]
+const MODE_LABELS = ["Classic", "Gravity", "Mutation", "Zen", "Adventure"]
 
 var _current_tab: int = 0
 var _content_nodes: Array = []

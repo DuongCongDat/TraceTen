@@ -184,6 +184,28 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
   - Gọi trong `trigger_end_game()` (mọi mode) + `_on_btn_quit_pressed()` else branch (Zen/Challenge/Mutation khi Leave)
   - UI: `ScrollContainer` chứa `HBoxContainer` tab buttons (swipe ngang), content area bên dưới
 
+**T7 (2026-05-31) — UI Polish + Adventure Mode rework**
+
+*UI Polish (Phase 1–4):*
+- **Theme Foundation:** `theme_tokens.gd` — Mint Cream palette, StyleBox helpers, font helpers (Inter Variable + JetBrains Mono Variable)
+- **Gravity Apple Tile:** `apple_draw.gd` — bezier 64-point apple shape, stem animation theo hướng gravity
+- **In-game HUD redesign:** score sub-label, mode chip, power-up badges (count pill), combo badge; power-up button size giảm 120→96px cho vừa vặn hơn
+- **Selection + Score animations (Phase 4):** dashed border selection rect (4 cạnh `draw_dashed_line`), sum bubble 3 màu (gray/mint/đỏ theo under/exact/over), score chip có pill background màu combo, tự co theo độ dài text
+
+*Bug fixes phát hiện trong quá trình polish:*
+- Power-up badge count không hiện lần đầu vào game → `update_power_up_ui()` gọi thiếu sau khi tạo badge node
+- 2 dải sáng mép trái/phải board → `BOARD_BG` chỉ vẽ trên rect board, fix bằng vẽ full-width cho toàn game area
+- `_update_challenge_hud()` có guard `if gameplay_mode != "CHALLENGE": return` → ZEN mode không bao giờ update label, fix thành `not in ["ZEN", "CHALLENGE"]`
+- Hint algorithm dùng loop bounds làm bbox → không khớp với `evaluate_selection` dùng tile-position bbox → hint gợi ý nước đi không thỏa constraint; fix: tính bbox từ vị trí tile thực trong `find_hint_path()`
+
+*Adventure Mode (đổi tên từ Challenge):*
+- Đổi tên display "Challenge" → "Adventure" (internal string `"CHALLENGE"` giữ nguyên)
+- **Lý do đổi tên:** các safety net được thêm vào làm mode không còn mang tính "thử thách" theo nghĩa truyền thống; "Adventure" phản ánh đúng hơn trải nghiệm leo 12 biome có constraint
+- Milestone refill: 50đ/lần → +3 PU (Zen giữ 100đ → +1); Adventure khó hơn Zen nên cần refill thường và nhiều hơn
+- Hết move hợp lệ: auto-shuffle miễn phí (không tiêu shuffle count), thông báo; thay vì gameover ngay
+- Shuffle guarantee: thử tối đa 5 lần để tìm hoán vị có nước hợp lệ; nếu vẫn không có → refill board mới bằng ZenBoardGenerator (guaranteed valid) + "Board refreshed!"
+- **Lý do thiết kế:** với constraint hình dạng, tập hợp số hiện tại đôi khi không thể tạo tổng 10 thỏa constraint bất kể xáo thế nào → cần fallback sinh board mới thay vì gameover vô lý
+
 **T6 (2026-05-18)**
 - **Achievement System** — 25 thành tựu, 6 category (Beginner, Score, Combo, Mode, Special Tiles, Quirky)
 - `data/achievements.gd` — `AchievementData.LIST` config 25 entry (id, name, desc, target); `get_def(id)`
@@ -627,7 +649,7 @@ const LEVELS = [
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
 | **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
 | **T6** ✅ | Achievement System | 25 thành tựu, `Global.unlock_achievement()`, notification popup, Achievement screen |
-| **T7** ⏳ | Sound + VFX + UI Polish | ✅ SFX: `AudioManager` pool 8 player, 11 SFX hooked; ✅ VFX: tile burst `CPUParticles2D`, combo bounce, wrong flash, score float; ✅ UI Phase 1: `scripts/theme_tokens.gd` (Mint Cream palette + StyleBox helpers + font helpers), `main_theme.tres` → Inter Variable + JetBrains Mono Variable; ✅ UI Phase 2: tile redesign — `tile.tscn/gd` (white idle, mint selected, scale 1.05 anim), `tile_mystery.gd` (slate hidden + hatch overlay + slate-revealed), `tile_virus.gd` (sage style + corner dots + countdown dots + pulse glow), `tile_negative.gd` (dusty rose + chevron), `tile_joker.gd` (amber gradient + pixel-art jester); helper scripts `mystery_hatch.gd`, `joker_draw.gd`; ⏳ UI Phase 3-5; ⏳ BGM |
+| **T7** ⏳ | Sound + VFX + UI Polish | ✅ SFX + VFX; ✅ UI Phase 1-4 (theme, tiles, HUD, selection); ⏳ Phase 5+; ⏳ BGM |
 | **T8** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
 | **T9** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
 | **T10** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |

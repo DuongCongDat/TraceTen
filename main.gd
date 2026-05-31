@@ -88,7 +88,7 @@ var tutorial_texts = {
 		"Board refills automatically when 70% cleared.\nEvery 100 points, all power-ups restore once — and they stack!"
 	],
 	"CHALLENGE": [
-		"Challenge Mode!\n\n12 levels, each with a unique shape constraint. Match the constraint AND sum to 10 to score!",
+		"Adventure Mode!\n\n12 levels, each with a unique shape constraint. Match the constraint AND sum to 10 to score!",
 		"Each level unlocks at a score milestone.\nThe current constraint is shown at the top — drag the wrong shape and it won't count.",
 		"No time limit. Power-ups refill every 100 points.\nProgress saves automatically when you pause."
 	]
@@ -140,7 +140,7 @@ func _ready():
 
 	# Compute tile_size to fit within screen, leaving room for UI top/bottom
 	var ui_top    = 192.0  # 128px top bar + 64px sub-info bar
-	var ui_bottom = 170.0  # power-up bar: 120px button + 28px name label + margins
+	var ui_bottom = 170.0  # power-up bar: button + name label + margins
 	var avail_w   = screen_w * 0.90  # 10% horizontal margin (increased from 5%)
 	var avail_h   = screen_h - ui_top - ui_bottom
 	tile_size = int(min(floor(avail_w / grid_cols), floor(avail_h / grid_rows)))
@@ -176,6 +176,9 @@ func setup_mode_config():
 	gravity_l4_dir     = "DOWN"
 	zen_milestone_count = 0
 	Global.hints_used_this_game = 0
+	if not Global.load_save:
+		Global.zen_current_level   = 1
+		Global.zen_unlocked_levels = [1]
 	_mutation_types_cleared = []
 	Global.track_mode_played(gameplay_mode)
 
@@ -209,6 +212,12 @@ func setup_mode_config():
 		btn_change_level.show()
 		btn_change_level_hud.show()
 		_update_challenge_hud()
+	elif gameplay_mode == "ZEN":
+		challenge_level_label.show()
+		challenge_constraint_label.hide()
+		btn_change_level.show()
+		btn_change_level_hud.show()
+		_update_challenge_hud()
 	else:
 		challenge_level_label.hide()
 		challenge_constraint_label.hide()
@@ -231,27 +240,26 @@ func _draw():
 	# Power-up bar background
 	draw_rect(Rect2(0.0, sh - 170.0, sw, 170.0), ThemeTokens.PHONE_BG)
 
-	# Board background (Mint Cream palette)
+	# Board background — full-width game area so side strips match center
+	draw_rect(Rect2(0.0, 192.0, sw, sh - 192.0 - 170.0), ThemeTokens.BOARD_BG)
 	if tile_size > 0:
 		var pad = tile_size * 0.10
 		var board_pos = Vector2(start_pos.x - tile_size * 0.5 - pad, start_pos.y - tile_size * 0.5 - pad)
 		var board_size = Vector2(grid_cols * tile_size + pad * 2, grid_rows * tile_size + pad * 2)
-		var rect = Rect2(board_pos, board_size)
-		draw_rect(rect, ThemeTokens.BOARD_BG)
-		draw_rect(rect, ThemeTokens.BOARD_INSET, false, 1.5)
+		draw_rect(Rect2(board_pos, board_size), ThemeTokens.BOARD_INSET, false, 1.5)
 
 	# Selection box visual (fill + border, colour depends on sum)
 	if selection_box and selection_box.visible:
 		var sel_rect = Rect2(selection_box.position, selection_box.size)
 		if _selection_sum == 10:
 			draw_rect(sel_rect, Color(ThemeTokens.MINT.r, ThemeTokens.MINT.g, ThemeTokens.MINT.b, 0.18))
-			draw_rect(sel_rect, ThemeTokens.MINT_DARK, false, 2.5)
+			_draw_dashed_rect(sel_rect, ThemeTokens.MINT_DARK, 2.5, 10.0)
 		elif _selection_sum > 10:
 			draw_rect(sel_rect, Color(ThemeTokens.NEG_BG.r, ThemeTokens.NEG_BG.g, ThemeTokens.NEG_BG.b, 0.18))
-			draw_rect(sel_rect, ThemeTokens.NEG_DARK, false, 2.5)
+			_draw_dashed_rect(sel_rect, ThemeTokens.NEG_DARK, 2.5, 10.0)
 		else:
 			draw_rect(sel_rect, Color(ThemeTokens.MINT_SOFT.r, ThemeTokens.MINT_SOFT.g, ThemeTokens.MINT_SOFT.b, 0.25))
-			draw_rect(sel_rect, ThemeTokens.MINT, false, 2.0)
+			_draw_dashed_rect(sel_rect, ThemeTokens.MINT, 2.0, 10.0)
 
 	# Top bar + sub-info bar (drawn last to cover any board bleed into UI zone)
 	draw_rect(Rect2(0.0, 0.0, sw, 192.0), ThemeTokens.PHONE_BG)
@@ -392,7 +400,8 @@ func update_selection(touch_pos: Vector2):
 
 	var sum_label = selection_box.get_node("SumLabel")
 	sum_label.text = str(current_sum)
-	sum_label.add_theme_stylebox_override("normal", ThemeTokens.sb_sum_bubble(current_sum == 10))
+	var _sum_state := "exact" if current_sum == 10 else ("over" if current_sum > 10 else "under")
+	sum_label.add_theme_stylebox_override("normal", ThemeTokens.sb_sum_bubble(_sum_state))
 	sum_label.add_theme_color_override("font_color", Color.WHITE)
 	sum_label.size = Vector2(88, 44)
 	sum_label.position = Vector2((selection_box.size.x - 88.0) * 0.5, -54.0)
@@ -548,14 +557,16 @@ func evaluate_selection():
 
 func _check_zen_milestone():
 	if gameplay_mode not in ["ZEN", "CHALLENGE"]: return
-	var milestone = score / ZEN_REFILL_MILESTONE
+	var threshold = 50 if gameplay_mode == "CHALLENGE" else ZEN_REFILL_MILESTONE
+	var milestone = score / threshold
 	if milestone > zen_milestone_count:
 		zen_milestone_count = milestone
-		hint_count   += 1
-		shuffle_count += 1
-		remove_count  += 1
+		var gain = 3 if gameplay_mode == "CHALLENGE" else 1
+		hint_count   += gain
+		shuffle_count += gain
+		remove_count  += gain
 		AudioManager.play_sfx("powerup_gain")
-		show_floating_text_center("Power-up +1!", Color.LIME_GREEN)
+		show_floating_text_center("Power-up +%d!" % gain, Color.LIME_GREEN)
 		update_power_up_ui()
 		if gameplay_mode == "ZEN":
 			Global.update_achievement_progress("zen_refill3", zen_milestone_count)
@@ -572,6 +583,8 @@ func _check_zen_level_unlock():
 		Global.zen_unlocked_levels.append(next_level)
 		var level_name = ZenLevelManager.get_level_name(next_level)
 		show_floating_text_center("L%d %s unlocked!" % [next_level, level_name], Color.GOLD)
+		Global.zen_current_level = next_level
+		_update_challenge_hud()
 		if gameplay_mode == "CHALLENGE":
 			if next_level == 6:
 				Global.unlock_achievement("challenge_l6")
@@ -593,7 +606,56 @@ func check_end_game():
 		return
 	if hint_count > 0 or shuffle_count > 0 or remove_count > 0: return
 	if not scan_board_for_valid_moves():
-		trigger_end_game("NO_MOVES")
+		if gameplay_mode == "CHALLENGE":
+			_challenge_no_moves_rescue()
+		else:
+			trigger_end_game("NO_MOVES")
+
+
+func _challenge_no_moves_rescue():
+	AudioManager.play_sfx("shuffle")
+	show_floating_text_center("No moves!  Auto-shuffling...", Color.CYAN)
+	_challenge_auto_shuffle()
+
+
+func _challenge_auto_shuffle():
+	var tile_data = []
+	for pos in tiles.keys():
+		var t = tiles[pos]
+		tile_data.append({"val": t.value, "type": t.tile_type})
+
+	var _base = preload("res://tile.gd")
+	var found = false
+	for _attempt in range(5):
+		tile_data.shuffle()
+		var i = 0
+		for pos in tiles.keys():
+			var t = tiles[pos]
+			var d = tile_data[i]
+			var ns = TileFactory.SCRIPTS.get(d.type, _base)
+			if t.get_script() != ns:
+				t.set_script(ns)
+			t.is_selected = false
+			if d.type == "VIRUS": t.virus_timer = 0.0
+			t.set_data(pos, d.val, d.type)
+			i += 1
+		if scan_board_for_valid_moves():
+			found = true
+			break
+
+	if not found:
+		for pos in tiles.keys():
+			if is_instance_valid(tiles[pos]): tiles[pos].queue_free()
+		tiles.clear()
+		_spawn_challenge_board()
+		show_floating_text_center("Board refreshed!", Color.GOLD)
+		return
+
+	for pos in tiles.keys():
+		var t = tiles[pos]
+		t.scale = Vector2.ZERO
+		var tw = create_tween()
+		tw.tween_property(t, "scale", _tile_normal_scale(), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _check_gravity_end_game():
@@ -1335,24 +1397,44 @@ func _on_btn_shuffle_pressed():
 	for pos in tiles.keys():
 		var t = tiles[pos]
 		tile_data.append({"val": t.value, "type": t.tile_type})
-	tile_data.shuffle()
 
 	var _base_tile_script = preload("res://tile.gd")
-	var i = 0
-	for pos in tiles.keys():
-		var t = tiles[pos]
-		var d = tile_data[i]
-		var new_script = TileFactory.SCRIPTS.get(d.type, _base_tile_script)
-		if t.get_script() != new_script:
-			t.set_script(new_script)
-		t.is_selected = false
-		if d.type == "VIRUS":
-			t.virus_timer = 0.0
-		t.set_data(pos, d.val, d.type)
-		i += 1
-		t.scale = Vector2.ZERO
-		var tween = create_tween()
-		tween.tween_property(t, "scale", _tile_normal_scale(), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var max_attempts = 5 if gameplay_mode == "CHALLENGE" else 1
+	var attempt = 0
+	var found_valid = false
+	while attempt < max_attempts:
+		tile_data.shuffle()
+		var i = 0
+		for pos in tiles.keys():
+			var t = tiles[pos]
+			var d = tile_data[i]
+			var new_script = TileFactory.SCRIPTS.get(d.type, _base_tile_script)
+			if t.get_script() != new_script:
+				t.set_script(new_script)
+			t.is_selected = false
+			if d.type == "VIRUS":
+				t.virus_timer = 0.0
+			t.set_data(pos, d.val, d.type)
+			i += 1
+		attempt += 1
+		if gameplay_mode != "CHALLENGE" or scan_board_for_valid_moves():
+			found_valid = true
+			break
+
+	if gameplay_mode == "CHALLENGE" and not found_valid:
+		# Shuffle không tìm được nước hợp lệ → refill board mới (guaranteed valid)
+		for pos in tiles.keys():
+			if is_instance_valid(tiles[pos]):
+				tiles[pos].queue_free()
+		tiles.clear()
+		_spawn_challenge_board()
+		show_floating_text_center("Board refreshed!", Color.GOLD)
+	else:
+		for pos in tiles.keys():
+			var t = tiles[pos]
+			t.scale = Vector2.ZERO
+			var tween = create_tween()
+			tween.tween_property(t, "scale", _tile_normal_scale(), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 	check_end_game()
 
@@ -1446,7 +1528,7 @@ func update_gravity_level_ui():
 
 
 func _update_challenge_hud():
-	if gameplay_mode != "CHALLENGE": return
+	if gameplay_mode not in ["ZEN", "CHALLENGE"]: return
 	var lv := Global.zen_current_level
 	challenge_level_label.text = "L%d %s" % [lv, ZenLevelManager.get_level_name(lv)]
 	challenge_constraint_label.text = ZenLevelManager.get_constraint_text(lv)
@@ -1467,6 +1549,15 @@ func _fmt_score(n: int) -> String:
 	if n >= 1000:
 		return "%d,%03d" % [n / 1000, n % 1000]
 	return str(n)
+
+
+func _draw_dashed_rect(rect: Rect2, color: Color, width: float, dash: float) -> void:
+	var p := rect.position
+	var e := rect.end
+	draw_dashed_line(p,                  Vector2(e.x, p.y), color, width, dash)
+	draw_dashed_line(Vector2(e.x, p.y),  e,                 color, width, dash)
+	draw_dashed_line(e,                  Vector2(p.x, e.y), color, width, dash)
+	draw_dashed_line(Vector2(p.x, e.y),  p,                 color, width, dash)
 
 
 func _setup_hud_visuals():
@@ -1501,7 +1592,7 @@ func _setup_hud_visuals():
 	_score_sub_lbl.position = Vector2(score_x, score_top)
 	_score_sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_score_sub_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	_score_sub_lbl.add_theme_font_override("font", ThemeTokens.font_inter(500))
+	_score_sub_lbl.add_theme_font_override("font", ThemeTokens.font_mono(500))
 	_score_sub_lbl.add_theme_font_size_override("font_size", 22)
 	_score_sub_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	add_child(_score_sub_lbl)
@@ -1542,7 +1633,8 @@ func _setup_hud_visuals():
 
 	# Mode chip (right) — always visible
 	_mode_chip_lbl = Label.new()
-	_mode_chip_lbl.text = gameplay_mode
+	var _chip_labels = {"CLASSIC":"CLASSIC","GRAVITY":"GRAVITY","MUTATION":"MUTATION","ZEN":"ZEN","CHALLENGE":"ADVENTURE"}
+	_mode_chip_lbl.text = _chip_labels.get(gameplay_mode, gameplay_mode)
 	_mode_chip_lbl.size = Vector2(chip_w, sub_h)
 	_mode_chip_lbl.position = Vector2(sw - chip_w - 12.0, sub_y)
 	_mode_chip_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1576,21 +1668,25 @@ func _setup_hud_visuals():
 	lives_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	lives_label.add_theme_font_size_override("font_size", 26)
 
-	# Challenge-specific labels
-	challenge_level_label.position = Vector2(16.0, sub_y)
-	challenge_level_label.size = Vector2(sw * 0.5, sub_h)
-	challenge_level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Challenge/Zen: 2-line below score, aligned with score column (same x/width)
+	var line1_h := 28.0
+	var line2_h := 22.0
+	# Line 1 — level name
+	challenge_level_label.position = Vector2(score_x, sub_y)
+	challenge_level_label.size = Vector2(score_w, line1_h)
+	challenge_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	challenge_level_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	challenge_level_label.add_theme_font_size_override("font_size", 22)
 	challenge_level_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
-
-	challenge_constraint_label.position = Vector2(sw * 0.5, sub_y)
-	challenge_constraint_label.size = Vector2(sw * 0.5 - chip_w - 20.0, sub_h)
-	challenge_constraint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	# Line 2 — constraint text
+	challenge_constraint_label.position = Vector2(score_x, sub_y + line1_h + 2.0)
+	challenge_constraint_label.size = Vector2(score_w, line2_h)
+	challenge_constraint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	challenge_constraint_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	challenge_constraint_label.add_theme_font_size_override("font_size", 20)
+	challenge_constraint_label.add_theme_font_size_override("font_size", 17)
 	challenge_constraint_label.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 
-	btn_change_level_hud.hide()
+	btn_change_level_hud.visible = gameplay_mode in ["ZEN", "CHALLENGE"]
 
 	# ── SELECTION BOX ───────────────────────────────────────────────────────
 	selection_box.color = Color(0, 0, 0, 0)
@@ -1601,11 +1697,11 @@ func _setup_hud_visuals():
 	_sum_lbl.add_theme_font_size_override("font_size", 36)
 
 	# ── POWER-UP BAR (bottom) ───────────────────────────────────────────────
-	var btn_size := float(ThemeTokens.POWERUP_BUTTON_SIZE)  # 120
+	var btn_size := float(ThemeTokens.POWERUP_BUTTON_SIZE)  # 96
 	var btn_gap  := 32.0
 	var total_btn_w := 3.0 * btn_size + 2.0 * btn_gap
 	var bx   := (sw - total_btn_w) * 0.5
-	var by   := sh - btn_size - 44.0
+	var by   := sh - 170.0 + 18.0    # 18px top padding within 170px PU zone
 	var nm_y := by + btn_size + 8.0   # name-label row y
 
 	$PowerUpContainer.position = Vector2(bx, by)
@@ -1629,7 +1725,7 @@ func _setup_hud_visuals():
 		btn.add_theme_stylebox_override("pressed",  ThemeTokens.sb_powerup_button())
 		btn.add_theme_stylebox_override("disabled", sb_pu_dis)
 		btn.add_theme_font_override("font", ThemeTokens.font_mono(700))
-		btn.add_theme_font_size_override("font_size", 44)
+		btn.add_theme_font_size_override("font_size", 36)
 		btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
 		btn.add_theme_color_override("font_disabled_color", Color(0.60, 0.55, 0.48))
 
@@ -1641,8 +1737,8 @@ func _setup_hud_visuals():
 		badge.add_theme_font_size_override("font_size", 22)
 		badge.add_theme_color_override("font_color", Color.WHITE)
 		badge.add_theme_stylebox_override("normal", ThemeTokens.sb_powerup_badge())
-		badge.size = Vector2(56.0, 36.0)
-		badge.position = Vector2(bx + i * (btn_size + btn_gap) + btn_size - 40.0, by - 20.0)
+		badge.size = Vector2(52.0, 32.0)
+		badge.position = Vector2(bx + i * (btn_size + btn_gap) + btn_size - 36.0, by - 14.0)
 		badge.z_index = 5
 		add_child(badge)
 
@@ -1663,6 +1759,7 @@ func _setup_hud_visuals():
 			2: _badge_remove  = badge
 
 	queue_redraw()
+	update_power_up_ui()
 
 
 # ==========================================
@@ -1723,18 +1820,23 @@ func update_combo_ui():
 
 func show_floating_score(points: int, used_combo: int):
 	var label = Label.new()
-	label.text = "+" + str(points)
+	label.text = "+%d" % points
 	label.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	label.add_theme_font_size_override("font_size", 52)
-	label.add_theme_color_override("font_color", ThemeTokens.combo_color(used_combo)["bg"])
+	label.add_theme_font_size_override("font_size", 24)
+	var colors = ThemeTokens.combo_color(used_combo)
+	label.add_theme_color_override("font_color", colors["text"])
+	label.add_theme_stylebox_override("normal", ThemeTokens.sb_score_chip(used_combo))
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.size = Vector2(260, 80)
+	label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	# width fits text: each char ~15px + 40px horizontal margin from stylebox
+	var pill_w := float(label.text.length()) * 15.0 + 40.0
+	label.size = Vector2(pill_w, 36)
 	var box_center = selection_box.position + selection_box.size / 2.0
-	label.position = box_center - Vector2(130, 40)
+	label.position = box_center - Vector2(pill_w * 0.5, 18)
 	add_child(label)
-	var tween = create_tween()
-	tween.tween_property(label, "position", label.position - Vector2(0, 100), 0.9).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.9)
+	var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(label, "position", label.position - Vector2(0, 80), 1.2)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 1.2)
 	tween.tween_callback(label.queue_free)
 
 
@@ -1762,8 +1864,14 @@ func find_hint_path() -> Array:
 								rect_tiles.append(p)
 					if rect_tiles.size() > 1 and is_valid_sum_10(rect_tiles):
 						if gameplay_mode == "CHALLENGE":
-							var bbox := Rect2i(x1, y1, x2 - x1 + 1, y2 - y1 + 1)
-							if not ZenLevelManager.validate_constraint(bbox, rect_tiles.size(), Global.zen_current_level)["valid"]:
+							# Bbox từ vị trí tile thực (giống evaluate_selection)
+							var tc_min_x = int(rect_tiles[0].x); var tc_max_x = int(rect_tiles[0].x)
+							var tc_min_y = int(rect_tiles[0].y); var tc_max_y = int(rect_tiles[0].y)
+							for tp in rect_tiles:
+								tc_min_x = min(tc_min_x, int(tp.x)); tc_max_x = max(tc_max_x, int(tp.x))
+								tc_min_y = min(tc_min_y, int(tp.y)); tc_max_y = max(tc_max_y, int(tp.y))
+							var tile_bbox := Rect2i(tc_min_x, tc_min_y, tc_max_x - tc_min_x + 1, tc_max_y - tc_min_y + 1)
+							if not ZenLevelManager.validate_constraint(tile_bbox, rect_tiles.size(), Global.zen_current_level)["valid"]:
 								continue
 						return rect_tiles
 	return []
@@ -2032,6 +2140,7 @@ func _init_debug_ui():
 		{"label": "Next Lv",   "method": "_debug_next_level",              "modes": ["GRAVITY"]},
 		{"label": "Next Lv",   "method": "_debug_challenge_next_level",    "modes": ["CHALLENGE"]},
 		{"label": "+200 pts",  "method": "_debug_add_score",               "modes": []},
+		{"label": "+10 PU",    "method": "_debug_add_powerups",            "modes": []},
 		{"label": "Reset PU",  "method": "_debug_reset_powerups",          "modes": []},
 		{"label": "Reset ACH", "method": "_debug_reset_achievements",       "modes": []},
 	]
@@ -2113,8 +2222,15 @@ func _debug_challenge_next_level():
 func _debug_add_score():
 	score += 200
 	update_score_ui()
-	if gameplay_mode == "ZEN":
+	if gameplay_mode in ["ZEN", "CHALLENGE"]:
 		_check_zen_milestone()
+
+
+func _debug_add_powerups():
+	hint_count   += 10
+	shuffle_count += 10
+	remove_count  += 10
+	update_power_up_ui()
 
 
 func _debug_reset_powerups():
