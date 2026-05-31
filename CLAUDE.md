@@ -49,8 +49,9 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 - **Giới hạn:** Chỉ bù trừ trong khoảng **-9 đến 9**.
 
 ### 🦠 Ô Virus (Màu Xanh)
-- **Cơ chế:** Mỗi **10 giây**, số trên Virus biến đổi ngẫu nhiên (65% dương 1-9, 30% âm -5→-1, 4% âm -9→-6, **1% ra 0 → nổ ngay**).
-- **Hiểm họa:** Nếu Virus về **0** mà chưa dọn → phát nổ, để lại lỗ hổng vĩnh viễn cắt đứt đường nối hình chữ nhật.
+- **HP:** Mỗi virus sinh ra với HP ngẫu nhiên **1–5** (hiển thị bằng countdown dots ở đáy tile).
+- **Cơ chế:** Mỗi **10 giây**, số trên Virus biến đổi ngẫu nhiên (65% dương 1-9, 30% âm -5→-1, 5% âm -9→-6). Mỗi tick tiêu 1 HP.
+- **Lan rộng:** Khi hết HP → virus **lan sang 1 ô liền kề ngẫu nhiên** (tạo virus mới tại đó, reset HP), gây phạt -10 điểm. Không còn cơ chế nổ ngẫu nhiên.
 
 ### ❓ Ô Ẩn Số
 - **Cơ chế:** Hiện dấu `?`. Phải chạm hoặc kéo lướt qua để lộ số thật.
@@ -192,11 +193,23 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 - **In-game HUD redesign:** score sub-label, mode chip, power-up badges (count pill), combo badge; power-up button size giảm 120→96px cho vừa vặn hơn
 - **Selection + Score animations (Phase 4):** dashed border selection rect (4 cạnh `draw_dashed_line`), sum bubble 3 màu (gray/mint/đỏ theo under/exact/over), score chip có pill background màu combo, tự co theo độ dài text
 
+*UI Polish (Phase 5 — Clear animation + VFX):*
+- **Staggered tile pop:** tiles biến mất lần lượt (delay 30ms/ô), mỗi ô scale 1.0→1.15→0 thay vì đồng loạt
+- **Enhanced particle burst:** 18 hạt chính + 8 white sparkle layer per tile
+- **Score chip pop:** chip `+N` xuất hiện từ 1.4× → 1×, rồi bay lên fade
+- **Combo badge escalation:** bump scale theo combo: x2=1.2×, x3=1.3×, x4=1.4×, x5+=1.5×
+
+*Tile redesign (cùng commit Phase 5):*
+- **Virus:** bỏ 4 corner dots; HP ngẫu nhiên 1–5 ticks; spread khi countdown = 0 (không còn random value=0); fix bug `set_script()` → dùng `TileFactory.make("VIRUS")` khi lây
+- **Negative:** bỏ `▾` chevron trang trí
+- **Joker:** bỏ white dot 8×8 trang trí
+- **Spawn rates Mutation:** MYSTERY 19.5%, VIRUS 6%, JOKER 1%, NORMAL/NEGATIVE ~73.5%
+
 *Bug fixes phát hiện trong quá trình polish:*
 - Power-up badge count không hiện lần đầu vào game → `update_power_up_ui()` gọi thiếu sau khi tạo badge node
 - 2 dải sáng mép trái/phải board → `BOARD_BG` chỉ vẽ trên rect board, fix bằng vẽ full-width cho toàn game area
 - `_update_challenge_hud()` có guard `if gameplay_mode != "CHALLENGE": return` → ZEN mode không bao giờ update label, fix thành `not in ["ZEN", "CHALLENGE"]`
-- Hint algorithm dùng loop bounds làm bbox → không khớp với `evaluate_selection` dùng tile-position bbox → hint gợi ý nước đi không thỏa constraint; fix: tính bbox từ vị trí tile thực trong `find_hint_path()`
+- Hint algorithm dùng loop bounds làm bbox → không khớp với `evaluate_selection` dùng tile-position bbox; fix: tính bbox từ vị trí tile thực trong `find_hint_path()`
 
 *Adventure Mode (đổi tên từ Challenge):*
 - Đổi tên display "Challenge" → "Adventure" (internal string `"CHALLENGE"` giữ nguyên)
@@ -649,7 +662,7 @@ const LEVELS = [
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
 | **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
 | **T6** ✅ | Achievement System | 25 thành tựu, `Global.unlock_achievement()`, notification popup, Achievement screen |
-| **T7** ⏳ | Sound + VFX + UI Polish | ✅ SFX + VFX; ✅ UI Phase 1-4 (theme, tiles, HUD, selection); ⏳ Phase 5+; ⏳ BGM |
+| **T7** ⏳ | Sound + VFX + UI Polish | ✅ UI Phase 1-5 (theme, tiles, HUD, selection, VFX); ✅ Tile redesign (Virus/Negative/Joker); ⏳ Phase 6+ (Menu, Overlays, Biomes...); ⏳ BGM |
 | **T8** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
 | **T9** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
 | **T10** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |
