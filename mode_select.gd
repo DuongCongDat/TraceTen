@@ -396,7 +396,7 @@ func _style_save_submenu():
 	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var kf := ThemeTokens.font_inter(700); kf.spacing_glyph = 7
 	kicker.add_theme_font_override("font", kf)
-	kicker.add_theme_font_size_override("font_size", 24)
+	kicker.add_theme_font_size_override("font_size", 23)
 	kicker.add_theme_color_override("font_color", Color("546560"))
 	vbox.add_child(kicker)
 
@@ -407,7 +407,7 @@ func _style_save_submenu():
 	_sm_mode_lbl.text = "—"
 	_sm_mode_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_sm_mode_lbl.add_theme_font_override("font", ThemeTokens.font_inter(800))
-	_sm_mode_lbl.add_theme_font_size_override("font_size", 60)
+	_sm_mode_lbl.add_theme_font_size_override("font_size", 57)
 	_sm_mode_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	_sm_mode_lbl.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
 	_sm_mode_lbl.add_theme_constant_override("outline_size", 2)
@@ -477,7 +477,7 @@ func _make_sm_stat_cell(value_text: String, label_text: String) -> Panel:
 	val_lbl.text = value_text
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	val_lbl.add_theme_font_size_override("font_size", 45)
+	val_lbl.add_theme_font_size_override("font_size", 43)
 	val_lbl.add_theme_color_override("font_color", Color("2f3a36"))
 	val_lbl.add_theme_color_override("font_outline_color", Color("2f3a36"))
 	val_lbl.add_theme_constant_override("outline_size", 2)
@@ -487,7 +487,7 @@ func _make_sm_stat_cell(value_text: String, label_text: String) -> Panel:
 	sub_lbl.text = label_text
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.add_theme_font_override("font", sub_f)
-	sub_lbl.add_theme_font_size_override("font_size", 20)
+	sub_lbl.add_theme_font_size_override("font_size", 19)
 	sub_lbl.add_theme_color_override("font_color", Color("546560"))
 	vb.add_child(sub_lbl)
 	cell.set_meta("val_lbl", val_lbl)
@@ -499,7 +499,7 @@ func _style_sm_btn_primary(btn: Button, label: String) -> void:
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 4
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 33)
+	btn.add_theme_font_size_override("font_size", 31)
 	btn.add_theme_color_override("font_outline_color", Color.WHITE)
 	btn.add_theme_constant_override("outline_size", 2)
 	btn.add_theme_color_override("font_color", Color.WHITE)
@@ -520,7 +520,7 @@ func _style_sm_btn_secondary(btn: Button, label: String) -> void:
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 3
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 30)
+	btn.add_theme_font_size_override("font_size", 29)
 	btn.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
 	btn.add_theme_constant_override("outline_size", 2)
 	btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
@@ -542,7 +542,7 @@ func _style_sm_btn_ghost(btn: Button, label: String) -> void:
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 5
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 26)
+	btn.add_theme_font_size_override("font_size", 25)
 	btn.add_theme_color_override("font_color", Color("546560"))
 	var sb := StyleBoxFlat.new(); sb.bg_color = Color(0, 0, 0, 0)
 	ThemeTokens._set_radius(sb, 14)
