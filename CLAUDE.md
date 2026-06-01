@@ -219,6 +219,16 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 - Shuffle guarantee: thử tối đa 5 lần để tìm hoán vị có nước hợp lệ; nếu vẫn không có → refill board mới bằng ZenBoardGenerator (guaranteed valid) + "Board refreshed!"
 - **Lý do thiết kế:** với constraint hình dạng, tập hợp số hiện tại đôi khi không thể tạo tổng 10 thỏa constraint bất kể xáo thế nào → cần fallback sinh board mới thay vì gameover vô lý
 
+*UI Polish (Phase 6 — Main Menu + Mode Select):*
+- **`main_menu.gd`:** background APP_BG, logo "trace" + tile "10" (Inter 800 + Mono 800), 5 nút nav (PLAY primary mint 128px, MODES + HIGHSCORE + ACHIEVEMENTS + TUTORIAL + QUIT secondary Inter 600), mode chip cạnh PLAY hiện mode vừa chơi (MINT_DARK), floating bg 6 số + 6 tile đặc biệt + 5 sparkle dots, Settings cog panel góc trên phải
+- **`mode_select.gd`:** mini logo top bar, heading "CHOOSE A MODE" (Inter 600 letter-spaced) + "5 ways to play" (Inter 800 bold), 5 hero card (PanelContainer + icon 116×116 + tên bold + tag + BEST score/label cột phải + chevron), click via `gui_input`; PLAY → `Global.last_played_mode`
+- **Mode icons:** emoji (⌛ Classic, 🍎 Gravity, ☯ Zen, ⛰ Adventure, 🧠 Mutation)
+- **`Global.last_played_mode`**: lưu mode vừa chơi, PLAY button dùng để chơi tiếp không cần vào mode select
+
+*Gameplay balance (cùng session Phase 6):*
+- **Combo cap x5:** `COMBO_MAX = 5`, `combo_count = min(combo_count + 1, COMBO_MAX)`
+- **Achievement "Unstoppable" (`combo_10`) đổi điều kiện:** thay vì x10 combo → land 5 hits liên tiếp khi đang ở x5; track bằng `_combo_x5_streak` (reset khi combo bị phá)
+
 **T6 (2026-05-18)**
 - **Achievement System** — 25 thành tựu, 6 category (Beginner, Score, Combo, Mode, Special Tiles, Quirky)
 - `data/achievements.gd` — `AchievementData.LIST` config 25 entry (id, name, desc, target); `get_def(id)`
@@ -662,7 +672,7 @@ const LEVELS = [
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
 | **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
 | **T6** ✅ | Achievement System | 25 thành tựu, `Global.unlock_achievement()`, notification popup, Achievement screen |
-| **T7** ⏳ | Sound + VFX + UI Polish | ✅ UI Phase 1-5 (theme, tiles, HUD, selection, VFX); ✅ Tile redesign (Virus/Negative/Joker); ⏳ Phase 6+ (Menu, Overlays, Biomes...); ⏳ BGM |
+| **T7** ⏳ | Sound + VFX + UI Polish | ✅ UI Phase 1-6 (theme, tiles, HUD, selection, VFX, Main Menu + Mode Select); ✅ Tile redesign; ✅ Combo cap x5; ⏳ Phase 7+ (Pause, Game Over, Biomes...); ⏳ BGM |
 | **T8** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
 | **T9** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
 | **T10** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |

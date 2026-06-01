@@ -14,6 +14,7 @@ const ACHIEVEMENT_PATH = "user://achievements.json"
 var _achievements: Dictionary = {}  # {id: {unlocked, progress}}
 var modes_played: Array = []        # persisted — for "all_modes" achievement
 var hints_used_this_game: int = 0   # reset each game — for "no_hint" achievement
+var last_played_mode: String = ""   # shown on PLAY button in main menu
 
 const _SAVE_PATHS = {
 	"ZEN":       "user://save_zen.json",
@@ -64,6 +65,12 @@ func save_highscore(data: Dictionary):
 	var file = FileAccess.open(HIGHSCORE_PATH, FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(data))
+
+func count_unlocked() -> int:
+	var n := 0
+	for v in _achievements.values():
+		if v.get("unlocked", false): n += 1
+	return n
 
 func _ready():
 	load_achievements()

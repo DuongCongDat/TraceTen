@@ -63,8 +63,8 @@ const LIST: Array = [
 	{
 		"id": "combo_10",
 		"name": "Unstoppable",
-		"desc": "Reach x10 combo.",
-		"target": 10,
+		"desc": "Land 5 hits in a row while at ×5 combo.",
+		"target": 5,
 	},
 	{
 		"id": "combo_classic",

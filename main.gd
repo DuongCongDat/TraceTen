@@ -34,6 +34,8 @@ var _combo_ring = null  # ComboRing node, created in _setup_hud_visuals
 var combo_count = 1
 var last_score_time = 0.0
 const COMBO_TIMEOUT = 5.0
+const COMBO_MAX = 5
+var _combo_x5_streak: int = 0  # hits while at x5 — for "Unstoppable" achievement
 
 # --- TILE VISUAL ---
 const BASE_TILE_SIZE  = 105.0
@@ -441,6 +443,7 @@ func evaluate_selection():
 			var c_result = ZenLevelManager.validate_constraint(bbox, selected_tiles.size(), Global.zen_current_level)
 			if not c_result["valid"]:
 				combo_count = 1
+				_combo_x5_streak = 0
 				update_combo_ui()
 				AudioManager.play_sfx("wrong")
 				_flash_wrong_tiles()
@@ -461,10 +464,13 @@ func evaluate_selection():
 		# Combo applies to ALL modes using real-time clock
 		var now = Time.get_unix_time_from_system()
 		if last_score_time > 0 and now - last_score_time <= COMBO_TIMEOUT:
-			combo_count += 1
+			combo_count = min(combo_count + 1, COMBO_MAX)
+			if combo_count == COMBO_MAX:
+				_combo_x5_streak += 1
 			AudioManager.play_sfx("combo")
 		else:
 			combo_count = 1
+			_combo_x5_streak = 0
 		last_score_time = now
 		update_combo_ui()
 
@@ -480,11 +486,11 @@ func evaluate_selection():
 		# ── Achievement: combo ──
 		if combo_count >= 2:
 			Global.unlock_achievement("first_combo")
-		if combo_count >= 5:
+		if combo_count >= COMBO_MAX:
 			Global.unlock_achievement("combo_5")
 			if gameplay_mode == "CLASSIC":
 				Global.unlock_achievement("combo_classic")
-		if combo_count >= 10:
+		if _combo_x5_streak >= 5:
 			Global.unlock_achievement("combo_10")
 
 		# ── Achievement: tile types (check before freeing tiles) ──
@@ -1022,6 +1028,7 @@ func start_time_attack_game():
 	game_start_time = Time.get_unix_time_from_system()
 	accumulated_time = 0.0
 	combo_count = 1
+	_combo_x5_streak = 0
 	last_score_time = 0.0
 	combo_label.hide()
 	$PauseMenuLayer.hide()
@@ -1051,6 +1058,7 @@ func _process(delta):
 		var remaining = COMBO_TIMEOUT - (Time.get_unix_time_from_system() - last_score_time)
 		if remaining <= 0:
 			combo_count = 1
+			_combo_x5_streak = 0
 			combo_label.hide()
 			if is_instance_valid(_combo_ring):
 				_combo_ring.visible = false
@@ -1343,6 +1351,7 @@ func _reset_game():
 	accumulated_time = 0.0
 	max_combo = 1
 	combo_count = 1
+	_combo_x5_streak = 0
 	is_remove_mode = false
 
 	for pos in tiles.keys():
