@@ -343,8 +343,9 @@ func _style_save_submenu():
 	$SaveSubMenu.add_child(center)
 
 	# Card — PanelContainer auto-fills its child
+	var sw := get_viewport_rect().size.x
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(276, 0)
+	card.custom_minimum_size = Vector2(sw * 0.78, 0)
 	var sb_c := ThemeTokens.sb_card()
 	sb_c.shadow_color = Color(0, 0, 0, 0.45)
 	sb_c.shadow_size = 28; sb_c.shadow_offset = Vector2(0, 10)

@@ -1902,6 +1902,7 @@ func _style_overlay_btn_ghost(btn: Button, label: String) -> void:
 
 func _setup_pause_overlay() -> void:
 	var layer := $PauseMenuLayer
+	var sw := get_viewport_rect().size.x
 
 	# Restyle dim
 	var dim := layer.get_node("ColorRect") as ColorRect
@@ -1926,7 +1927,7 @@ func _setup_pause_overlay() -> void:
 	layer.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(260, 0)
+	card.custom_minimum_size = Vector2(sw * 0.78, 0)
 	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
 	center.add_child(card)
 
@@ -1992,6 +1993,7 @@ func _setup_pause_overlay() -> void:
 
 func _setup_game_over_overlay() -> void:
 	var layer := $GameOverLayer
+	var sw := get_viewport_rect().size.x
 
 	# Restyle dim
 	var dim := layer.get_node("ColorRect") as ColorRect
@@ -2014,7 +2016,7 @@ func _setup_game_over_overlay() -> void:
 	layer.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(276, 0)
+	card.custom_minimum_size = Vector2(sw * 0.78, 0)
 	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
 	center.add_child(card)
 
