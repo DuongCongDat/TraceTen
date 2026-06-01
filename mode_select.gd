@@ -346,7 +346,7 @@ func _style_save_submenu():
 	# Card — PanelContainer auto-fills its child
 	var sw := get_viewport_rect().size.x
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(sw * 0.78, 0)
+	card.custom_minimum_size = Vector2(600, 620)
 	var sb_c := ThemeTokens.sb_card()
 	sb_c.shadow_color = Color(0, 0, 0, 0.45)
 	sb_c.shadow_size = 28; sb_c.shadow_offset = Vector2(0, 10)
@@ -434,7 +434,8 @@ func _style_save_submenu():
 	_sm_time_lbl = time_cell.get_meta("val_lbl") as Label
 	stats_row.add_child(time_cell)
 
-	var g_pre_btn := Control.new(); g_pre_btn.custom_minimum_size = Vector2(0, 24)
+	var g_pre_btn := Control.new()
+	g_pre_btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(g_pre_btn)
 
 	# Buttons
