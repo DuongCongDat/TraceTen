@@ -346,7 +346,7 @@ func _style_save_submenu():
 	# Card — PanelContainer auto-fills its child
 	var sw := get_viewport_rect().size.x
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(sw * 0.78, 600)
+	card.custom_minimum_size = Vector2(sw * 0.78, 0)
 	var sb_c := ThemeTokens.sb_card()
 	sb_c.shadow_color = Color(0, 0, 0, 0.45)
 	sb_c.shadow_size = 28; sb_c.shadow_offset = Vector2(0, 10)
@@ -434,10 +434,8 @@ func _style_save_submenu():
 	_sm_time_lbl = time_cell.get_meta("val_lbl") as Label
 	stats_row.add_child(time_cell)
 
-	# Flexible spacer pushes buttons toward bottom
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(spacer)
+	var g_pre_btn := Control.new(); g_pre_btn.custom_minimum_size = Vector2(0, 24)
+	vbox.add_child(g_pre_btn)
 
 	# Buttons
 	var btn_vbox := VBoxContainer.new()
@@ -514,7 +512,7 @@ func _style_sm_btn_secondary(btn: Button, label: String) -> void:
 	btn.text = label
 	btn.custom_minimum_size = Vector2(0, 56)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 3
+	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 3
 	btn.add_theme_font_override("font", f)
 	btn.add_theme_font_size_override("font_size", 15)
 	btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
@@ -534,7 +532,7 @@ func _style_sm_btn_ghost(btn: Button, label: String) -> void:
 	btn.text = label
 	btn.custom_minimum_size = Vector2(0, 48)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 5
+	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 5
 	btn.add_theme_font_override("font", f)
 	btn.add_theme_font_size_override("font_size", 14)
 	btn.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)

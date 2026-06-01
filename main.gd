@@ -1869,7 +1869,7 @@ func _style_overlay_btn_secondary(btn: Button, label: String) -> void:
 	btn.text = label
 	btn.custom_minimum_size = Vector2(0, 56)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 3
+	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 3
 	btn.add_theme_font_override("font", f)
 	btn.add_theme_font_size_override("font_size", 15)
 	btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
@@ -1889,7 +1889,7 @@ func _style_overlay_btn_ghost(btn: Button, label: String) -> void:
 	btn.text = label
 	btn.custom_minimum_size = Vector2(0, 48)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 5
+	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 5
 	btn.add_theme_font_override("font", f)
 	btn.add_theme_font_size_override("font_size", 14)
 	btn.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
@@ -1927,7 +1927,7 @@ func _setup_pause_overlay() -> void:
 	layer.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(sw * 0.78, 600)
+	card.custom_minimum_size = Vector2(sw * 0.78, 0)
 	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
 	center.add_child(card)
 
@@ -1975,10 +1975,7 @@ func _setup_pause_overlay() -> void:
 	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	vbox.add_child(title)
 
-	# Flexible spacer pushes buttons toward bottom
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(spacer)
+	vbox.add_child(_make_go_gap(24))
 
 	# Buttons
 	var btn_vbox := VBoxContainer.new()
