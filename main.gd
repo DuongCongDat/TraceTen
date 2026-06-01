@@ -1804,7 +1804,7 @@ func _make_go_gap(h: float) -> Control:
 func _make_go_stat_cell(value_text: String, label_text: String) -> Panel:
 	var cell := Panel.new()
 	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cell.custom_minimum_size = Vector2(0, 68)
+	cell.custom_minimum_size = Vector2(0, 110)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("efe7d5")
 	ThemeTokens._set_radius(sb, 12)
@@ -1830,18 +1830,20 @@ func _make_go_stat_cell(value_text: String, label_text: String) -> Panel:
 	val_lbl.text = value_text
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	val_lbl.add_theme_font_size_override("font_size", 22)
+	val_lbl.add_theme_font_size_override("font_size", 43)
 	val_lbl.add_theme_color_override("font_color", Color("2f3a36"))
+	val_lbl.add_theme_color_override("font_outline_color", Color("2f3a36"))
+	val_lbl.add_theme_constant_override("outline_size", 2)
 	vb.add_child(val_lbl)
 
-	var sub_font := ThemeTokens.font_inter(600)
+	var sub_font := ThemeTokens.font_inter(700)
 	sub_font.spacing_glyph = 5
 	var sub_lbl := Label.new()
 	sub_lbl.text = label_text
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.add_theme_font_override("font", sub_font)
-	sub_lbl.add_theme_font_size_override("font_size", 11)
-	sub_lbl.add_theme_color_override("font_color", Color("8a9590"))
+	sub_lbl.add_theme_font_size_override("font_size", 19)
+	sub_lbl.add_theme_color_override("font_color", Color("546560"))
 	vb.add_child(sub_lbl)
 
 	return cell
@@ -1852,8 +1854,10 @@ func _style_overlay_btn_primary(btn: Button, label: String) -> void:
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 4
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 16)
+	btn.add_theme_font_size_override("font_size", 31)
 	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_outline_color", Color.WHITE)
+	btn.add_theme_constant_override("outline_size", 2)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = ThemeTokens.MINT
 	ThemeTokens._set_radius(sb, 16)
@@ -1871,8 +1875,10 @@ func _style_overlay_btn_secondary(btn: Button, label: String) -> void:
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 3
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 15)
+	btn.add_theme_font_size_override("font_size", 29)
 	btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	btn.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
+	btn.add_theme_constant_override("outline_size", 2)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("efe7d5")
 	ThemeTokens._set_radius(sb, 16)
@@ -1891,8 +1897,8 @@ func _style_overlay_btn_ghost(btn: Button, label: String) -> void:
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 5
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 14)
-	btn.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	btn.add_theme_font_size_override("font_size", 25)
+	btn.add_theme_color_override("font_color", Color("546560"))
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0, 0, 0, 0)
 	ThemeTokens._set_radius(sb, 14)
@@ -1960,7 +1966,7 @@ func _setup_pause_overlay() -> void:
 	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon_lbl.add_theme_font_size_override("font_size", 28)
+	icon_lbl.add_theme_font_size_override("font_size", 32)
 	chip.add_child(icon_lbl)
 
 	vbox.add_child(_make_go_gap(14))
@@ -1971,8 +1977,10 @@ func _setup_pause_overlay() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var tf := ThemeTokens.font_inter(700); tf.spacing_glyph = 7
 	title.add_theme_font_override("font", tf)
-	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_font_size_override("font_size", 23)
 	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	title.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
+	title.add_theme_constant_override("outline_size", 2)
 	vbox.add_child(title)
 
 	vbox.add_child(_make_go_gap(24))
@@ -2074,7 +2082,7 @@ func _setup_game_over_overlay() -> void:
 	_go_icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_go_icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_go_icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_go_icon_lbl.add_theme_font_size_override("font_size", 28)
+	_go_icon_lbl.add_theme_font_size_override("font_size", 32)
 	icon_panel.add_child(_go_icon_lbl)
 
 	vbox.add_child(_make_go_gap(12))
@@ -2085,8 +2093,10 @@ func _setup_game_over_overlay() -> void:
 	_go_kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var kf := ThemeTokens.font_inter(700); kf.spacing_glyph = 6
 	_go_kind_label.add_theme_font_override("font", kf)
-	_go_kind_label.add_theme_font_size_override("font_size", 18)
+	_go_kind_label.add_theme_font_size_override("font_size", 23)
 	_go_kind_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	_go_kind_label.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
+	_go_kind_label.add_theme_constant_override("outline_size", 2)
 	vbox.add_child(_go_kind_label)
 
 	vbox.add_child(_make_go_gap(16))
@@ -2104,8 +2114,10 @@ func _setup_game_over_overlay() -> void:
 	_go_score_label.text = "0"
 	_go_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_go_score_label.add_theme_font_override("font", ThemeTokens.font_mono(800))
-	_go_score_label.add_theme_font_size_override("font_size", 46)
+	_go_score_label.add_theme_font_size_override("font_size", 57)
 	_go_score_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	_go_score_label.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
+	_go_score_label.add_theme_constant_override("outline_size", 2)
 	vbox.add_child(_go_score_label)
 
 	vbox.add_child(_make_go_gap(7))
@@ -2115,8 +2127,8 @@ func _setup_game_over_overlay() -> void:
 	score_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var sf := ThemeTokens.font_inter(600); sf.spacing_glyph = 7
 	score_sub.add_theme_font_override("font", sf)
-	score_sub.add_theme_font_size_override("font_size", 12)
-	score_sub.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	score_sub.add_theme_font_size_override("font_size", 19)
+	score_sub.add_theme_color_override("font_color", Color("546560"))
 	vbox.add_child(score_sub)
 
 	vbox.add_child(_make_go_gap(18))
