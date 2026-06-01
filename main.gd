@@ -1850,7 +1850,7 @@ func _make_go_stat_cell(value_text: String, label_text: String) -> Panel:
 
 func _style_overlay_btn_primary(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 60)
+	btn.custom_minimum_size = Vector2(0, 112)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 4
 	btn.add_theme_font_override("font", f)
@@ -1860,7 +1860,7 @@ func _style_overlay_btn_primary(btn: Button, label: String) -> void:
 	btn.add_theme_constant_override("outline_size", 2)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = ThemeTokens.MINT
-	ThemeTokens._set_radius(sb, 16)
+	ThemeTokens._set_radius(sb, 28)
 	sb.shadow_color = Color(ThemeTokens.MINT_DARK, 0.53)
 	sb.shadow_size = 6; sb.shadow_offset = Vector2(0, 4)
 	btn.add_theme_stylebox_override("normal", sb)
@@ -1871,7 +1871,7 @@ func _style_overlay_btn_primary(btn: Button, label: String) -> void:
 
 func _style_overlay_btn_secondary(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 56)
+	btn.custom_minimum_size = Vector2(0, 100)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 3
 	btn.add_theme_font_override("font", f)
@@ -1881,7 +1881,7 @@ func _style_overlay_btn_secondary(btn: Button, label: String) -> void:
 	btn.add_theme_constant_override("outline_size", 2)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("efe7d5")
-	ThemeTokens._set_radius(sb, 16)
+	ThemeTokens._set_radius(sb, 28)
 	sb.border_width_left = 1; sb.border_width_right = 1
 	sb.border_width_top = 1; sb.border_width_bottom = 1
 	sb.border_color = Color("e3d8c0")
@@ -1893,7 +1893,7 @@ func _style_overlay_btn_secondary(btn: Button, label: String) -> void:
 
 func _style_overlay_btn_ghost(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 48)
+	btn.custom_minimum_size = Vector2(0, 64)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 5
 	btn.add_theme_font_override("font", f)
@@ -1953,10 +1953,10 @@ func _setup_pause_overlay() -> void:
 	var ic := CenterContainer.new()
 	vbox.add_child(ic)
 	var chip := Panel.new()
-	chip.custom_minimum_size = Vector2(56, 56)
+	chip.custom_minimum_size = Vector2(120, 120)
 	var sb_chip := StyleBoxFlat.new()
 	sb_chip.bg_color = Color("cde9da")
-	ThemeTokens._set_radius(sb_chip, 18)
+	ThemeTokens._set_radius(sb_chip, 36)
 	sb_chip.border_width_left = 2; sb_chip.border_width_right = 2
 	sb_chip.border_width_top = 2; sb_chip.border_width_bottom = 2
 	sb_chip.border_color = Color(ThemeTokens.MINT_DARK, 0.27)
@@ -1967,10 +1967,10 @@ func _setup_pause_overlay() -> void:
 	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon_lbl.add_theme_font_size_override("font_size", 32)
+	icon_lbl.add_theme_font_size_override("font_size", 52)
 	chip.add_child(icon_lbl)
 
-	vbox.add_child(_make_go_gap(14))
+	vbox.add_child(_make_go_gap(20))
 
 	# "PAUSED" title
 	var title := Label.new()
@@ -1978,17 +1978,17 @@ func _setup_pause_overlay() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var tf := ThemeTokens.font_inter(700); tf.spacing_glyph = 7
 	title.add_theme_font_override("font", tf)
-	title.add_theme_font_size_override("font_size", 23)
+	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	title.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
 	title.add_theme_constant_override("outline_size", 2)
 	vbox.add_child(title)
 
-	vbox.add_child(_make_go_gap(24))
+	vbox.add_child(_make_go_gap(40))
 
 	# Buttons
 	var btn_vbox := VBoxContainer.new()
-	btn_vbox.add_theme_constant_override("separation", 10)
+	btn_vbox.add_theme_constant_override("separation", 18)
 	vbox.add_child(btn_vbox)
 
 	_style_overlay_btn_primary(btn_c, "CONTINUE")
