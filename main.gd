@@ -1962,20 +1962,13 @@ func _setup_pause_overlay() -> void:
 	sb_chip.border_color = Color(ThemeTokens.MINT_DARK, 0.27)
 	chip.add_theme_stylebox_override("panel", sb_chip)
 	ic.add_child(chip)
-	# Draw pause bars (avoid emoji color issue)
-	var bars := HBoxContainer.new()
-	bars.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bars.alignment = BoxContainer.ALIGNMENT_CENTER
-	bars.add_theme_constant_override("separation", 20)
-	for _i in 2:
-		var bar := Panel.new()
-		bar.custom_minimum_size = Vector2(18, 58)
-		var sb_bar := StyleBoxFlat.new()
-		sb_bar.bg_color = ThemeTokens.MINT_DARK
-		ThemeTokens._set_radius(sb_bar, 7)
-		bar.add_theme_stylebox_override("panel", sb_bar)
-		bars.add_child(bar)
-	chip.add_child(bars)
+	var icon_lbl := Label.new()
+	icon_lbl.text = "⏸"
+	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 52)
+	chip.add_child(icon_lbl)
 
 	vbox.add_child(_make_go_gap(20))
 
