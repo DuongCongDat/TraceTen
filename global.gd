@@ -16,6 +16,21 @@ var modes_played: Array = []        # persisted — for "all_modes" achievement
 var hints_used_this_game: int = 0   # reset each game — for "no_hint" achievement
 var last_played_mode: String = ""   # shown on PLAY button in main menu
 
+const CONFIG_PATH = "user://config.json"
+
+func save_config() -> void:
+	var file := FileAccess.open(CONFIG_PATH, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify({"last_played_mode": last_played_mode}))
+
+func load_config() -> void:
+	if not FileAccess.file_exists(CONFIG_PATH): return
+	var file := FileAccess.open(CONFIG_PATH, FileAccess.READ)
+	if not file: return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if parsed is Dictionary:
+		last_played_mode = parsed.get("last_played_mode", "")
+
 const _SAVE_PATHS = {
 	"ZEN":       "user://save_zen.json",
 	"MUTATION":  "user://save_mutation.json",
@@ -73,6 +88,7 @@ func count_unlocked() -> int:
 	return n
 
 func _ready():
+	load_config()
 	load_achievements()
 
 func load_achievements():

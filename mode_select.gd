@@ -48,6 +48,7 @@ func _show_save_menu(mode_name: String):
 func _go_to_game(load: bool):
 	Global.load_save = load
 	Global.last_played_mode = Global.selected_mode
+	Global.save_config()
 	get_tree().change_scene_to_file("res://main.tscn")
 
 func _on_btn_continue_pressed():
@@ -345,7 +346,7 @@ func _style_save_submenu():
 	# Card — PanelContainer auto-fills its child
 	var sw := get_viewport_rect().size.x
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(sw * 0.78, 0)
+	card.custom_minimum_size = Vector2(sw * 0.78, 600)
 	var sb_c := ThemeTokens.sb_card()
 	sb_c.shadow_color = Color(0, 0, 0, 0.45)
 	sb_c.shadow_size = 28; sb_c.shadow_offset = Vector2(0, 10)
@@ -367,10 +368,10 @@ func _style_save_submenu():
 	var ic := CenterContainer.new()
 	vbox.add_child(ic)
 	var chip := Panel.new()
-	chip.custom_minimum_size = Vector2(52, 52)
+	chip.custom_minimum_size = Vector2(64, 64)
 	var sb_chip := StyleBoxFlat.new()
 	sb_chip.bg_color = Color("cde9da")
-	ThemeTokens._set_radius(sb_chip, 16)
+	ThemeTokens._set_radius(sb_chip, 20)
 	sb_chip.border_width_left = 2; sb_chip.border_width_right = 2
 	sb_chip.border_width_top = 2; sb_chip.border_width_bottom = 2
 	sb_chip.border_color = Color(ThemeTokens.MINT_DARK, 0.27)
@@ -381,7 +382,7 @@ func _style_save_submenu():
 	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon_lbl.add_theme_font_size_override("font_size", 20)
+	icon_lbl.add_theme_font_size_override("font_size", 30)
 	icon_lbl.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 	chip.add_child(icon_lbl)
 
@@ -395,18 +396,18 @@ func _style_save_submenu():
 	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var kf := ThemeTokens.font_inter(600); kf.spacing_glyph = 7
 	kicker.add_theme_font_override("font", kf)
-	kicker.add_theme_font_size_override("font_size", 10)
+	kicker.add_theme_font_size_override("font_size", 12)
 	kicker.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	vbox.add_child(kicker)
 
-	var g2 := Control.new(); g2.custom_minimum_size = Vector2(0, 5)
+	var g2 := Control.new(); g2.custom_minimum_size = Vector2(0, 6)
 	vbox.add_child(g2)
 
 	_sm_mode_lbl = Label.new()
 	_sm_mode_lbl.text = "—"
 	_sm_mode_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_sm_mode_lbl.add_theme_font_override("font", ThemeTokens.font_inter(800))
-	_sm_mode_lbl.add_theme_font_size_override("font_size", 22)
+	_sm_mode_lbl.add_theme_font_size_override("font_size", 28)
 	_sm_mode_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	vbox.add_child(_sm_mode_lbl)
 
@@ -433,13 +434,14 @@ func _style_save_submenu():
 	_sm_time_lbl = time_cell.get_meta("val_lbl") as Label
 	stats_row.add_child(time_cell)
 
-	# Gap
-	var g5 := Control.new(); g5.custom_minimum_size = Vector2(0, 18)
-	vbox.add_child(g5)
+	# Flexible spacer pushes buttons toward bottom
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(spacer)
 
 	# Buttons
 	var btn_vbox := VBoxContainer.new()
-	btn_vbox.add_theme_constant_override("separation", 8)
+	btn_vbox.add_theme_constant_override("separation", 10)
 	vbox.add_child(btn_vbox)
 
 	_style_sm_btn_primary(btn_c, "CONTINUE")
@@ -452,7 +454,7 @@ func _style_save_submenu():
 func _make_sm_stat_cell(value_text: String, label_text: String) -> Panel:
 	var cell := Panel.new()
 	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cell.custom_minimum_size = Vector2(0, 68)
+	cell.custom_minimum_size = Vector2(0, 80)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("efe7d5")
 	ThemeTokens._set_radius(sb, 12)
@@ -464,18 +466,18 @@ func _make_sm_stat_cell(value_text: String, label_text: String) -> Panel:
 	mc.set_anchors_preset(Control.PRESET_FULL_RECT)
 	mc.add_theme_constant_override("margin_top", 11)
 	mc.add_theme_constant_override("margin_bottom", 11)
-	mc.add_theme_constant_override("margin_left", 6)
-	mc.add_theme_constant_override("margin_right", 6)
+	mc.add_theme_constant_override("margin_left", 8)
+	mc.add_theme_constant_override("margin_right", 8)
 	cell.add_child(mc)
 	var vb := VBoxContainer.new()
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
-	vb.add_theme_constant_override("separation", 5)
+	vb.add_theme_constant_override("separation", 6)
 	mc.add_child(vb)
 	var val_lbl := Label.new()
 	val_lbl.text = value_text
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	val_lbl.add_theme_font_size_override("font_size", 18)
+	val_lbl.add_theme_font_size_override("font_size", 22)
 	val_lbl.add_theme_color_override("font_color", Color("2f3a36"))
 	vb.add_child(val_lbl)
 	var sub_f := ThemeTokens.font_inter(600); sub_f.spacing_glyph = 5
@@ -483,7 +485,7 @@ func _make_sm_stat_cell(value_text: String, label_text: String) -> Panel:
 	sub_lbl.text = label_text
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.add_theme_font_override("font", sub_f)
-	sub_lbl.add_theme_font_size_override("font_size", 9)
+	sub_lbl.add_theme_font_size_override("font_size", 11)
 	sub_lbl.add_theme_color_override("font_color", Color("8a9590"))
 	vb.add_child(sub_lbl)
 	cell.set_meta("val_lbl", val_lbl)
@@ -491,11 +493,11 @@ func _make_sm_stat_cell(value_text: String, label_text: String) -> Panel:
 
 func _style_sm_btn_primary(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 50)
+	btn.custom_minimum_size = Vector2(0, 60)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 4
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_font_size_override("font_size", 16)
 	btn.add_theme_color_override("font_color", Color.WHITE)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = ThemeTokens.MINT
@@ -510,11 +512,11 @@ func _style_sm_btn_primary(btn: Button, label: String) -> void:
 
 func _style_sm_btn_secondary(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 46)
+	btn.custom_minimum_size = Vector2(0, 56)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 3
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_font_size_override("font_size", 15)
 	btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("efe7d5")
@@ -530,11 +532,11 @@ func _style_sm_btn_secondary(btn: Button, label: String) -> void:
 
 func _style_sm_btn_ghost(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 40)
+	btn.custom_minimum_size = Vector2(0, 48)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 5
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 12)
+	btn.add_theme_font_size_override("font_size", 14)
 	btn.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	var sb := StyleBoxFlat.new(); sb.bg_color = Color(0, 0, 0, 0)
 	ThemeTokens._set_radius(sb, 14)

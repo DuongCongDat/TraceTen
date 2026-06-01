@@ -1830,7 +1830,7 @@ func _make_go_stat_cell(value_text: String, label_text: String) -> Panel:
 	val_lbl.text = value_text
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	val_lbl.add_theme_font_size_override("font_size", 18)
+	val_lbl.add_theme_font_size_override("font_size", 22)
 	val_lbl.add_theme_color_override("font_color", Color("2f3a36"))
 	vb.add_child(val_lbl)
 
@@ -1840,7 +1840,7 @@ func _make_go_stat_cell(value_text: String, label_text: String) -> Panel:
 	sub_lbl.text = label_text
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.add_theme_font_override("font", sub_font)
-	sub_lbl.add_theme_font_size_override("font_size", 9)
+	sub_lbl.add_theme_font_size_override("font_size", 11)
 	sub_lbl.add_theme_color_override("font_color", Color("8a9590"))
 	vb.add_child(sub_lbl)
 
@@ -1848,11 +1848,11 @@ func _make_go_stat_cell(value_text: String, label_text: String) -> Panel:
 
 func _style_overlay_btn_primary(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 50)
+	btn.custom_minimum_size = Vector2(0, 60)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 4
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_font_size_override("font_size", 16)
 	btn.add_theme_color_override("font_color", Color.WHITE)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = ThemeTokens.MINT
@@ -1867,11 +1867,11 @@ func _style_overlay_btn_primary(btn: Button, label: String) -> void:
 
 func _style_overlay_btn_secondary(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 46)
+	btn.custom_minimum_size = Vector2(0, 56)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 3
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_font_size_override("font_size", 15)
 	btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("efe7d5")
@@ -1887,11 +1887,11 @@ func _style_overlay_btn_secondary(btn: Button, label: String) -> void:
 
 func _style_overlay_btn_ghost(btn: Button, label: String) -> void:
 	btn.text = label
-	btn.custom_minimum_size = Vector2(0, 40)
+	btn.custom_minimum_size = Vector2(0, 48)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 5
 	btn.add_theme_font_override("font", f)
-	btn.add_theme_font_size_override("font_size", 12)
+	btn.add_theme_font_size_override("font_size", 14)
 	btn.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0, 0, 0, 0)
@@ -1927,15 +1927,15 @@ func _setup_pause_overlay() -> void:
 	layer.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(sw * 0.78, 0)
+	card.custom_minimum_size = Vector2(sw * 0.78, 600)
 	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
 	center.add_child(card)
 
 	var mc := MarginContainer.new()
-	mc.add_theme_constant_override("margin_left", 22)
-	mc.add_theme_constant_override("margin_right", 22)
-	mc.add_theme_constant_override("margin_top", 26)
-	mc.add_theme_constant_override("margin_bottom", 22)
+	mc.add_theme_constant_override("margin_left", 28)
+	mc.add_theme_constant_override("margin_right", 28)
+	mc.add_theme_constant_override("margin_top", 36)
+	mc.add_theme_constant_override("margin_bottom", 28)
 	card.add_child(mc)
 
 	var vbox := VBoxContainer.new()
@@ -1946,10 +1946,10 @@ func _setup_pause_overlay() -> void:
 	var ic := CenterContainer.new()
 	vbox.add_child(ic)
 	var chip := Panel.new()
-	chip.custom_minimum_size = Vector2(44, 44)
+	chip.custom_minimum_size = Vector2(56, 56)
 	var sb_chip := StyleBoxFlat.new()
 	sb_chip.bg_color = Color("cde9da")
-	ThemeTokens._set_radius(sb_chip, 14)
+	ThemeTokens._set_radius(sb_chip, 18)
 	sb_chip.border_width_left = 2; sb_chip.border_width_right = 2
 	sb_chip.border_width_top = 2; sb_chip.border_width_bottom = 2
 	sb_chip.border_color = Color(ThemeTokens.MINT_DARK, 0.27)
@@ -1960,10 +1960,10 @@ func _setup_pause_overlay() -> void:
 	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon_lbl.add_theme_font_size_override("font_size", 20)
+	icon_lbl.add_theme_font_size_override("font_size", 28)
 	chip.add_child(icon_lbl)
 
-	vbox.add_child(_make_go_gap(10))
+	vbox.add_child(_make_go_gap(14))
 
 	# "PAUSED" title
 	var title := Label.new()
@@ -1971,15 +1971,18 @@ func _setup_pause_overlay() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var tf := ThemeTokens.font_inter(700); tf.spacing_glyph = 7
 	title.add_theme_font_override("font", tf)
-	title.add_theme_font_size_override("font_size", 13)
+	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	vbox.add_child(title)
 
-	vbox.add_child(_make_go_gap(18))
+	# Flexible spacer pushes buttons toward bottom
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(spacer)
 
 	# Buttons
 	var btn_vbox := VBoxContainer.new()
-	btn_vbox.add_theme_constant_override("separation", 9)
+	btn_vbox.add_theme_constant_override("separation", 10)
 	vbox.add_child(btn_vbox)
 
 	_style_overlay_btn_primary(btn_c, "CONTINUE")
@@ -2085,7 +2088,7 @@ func _setup_game_over_overlay() -> void:
 	_go_kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var kf := ThemeTokens.font_inter(700); kf.spacing_glyph = 6
 	_go_kind_label.add_theme_font_override("font", kf)
-	_go_kind_label.add_theme_font_size_override("font_size", 14)
+	_go_kind_label.add_theme_font_size_override("font_size", 18)
 	_go_kind_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	vbox.add_child(_go_kind_label)
 
@@ -2115,7 +2118,7 @@ func _setup_game_over_overlay() -> void:
 	score_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var sf := ThemeTokens.font_inter(600); sf.spacing_glyph = 7
 	score_sub.add_theme_font_override("font", sf)
-	score_sub.add_theme_font_size_override("font_size", 10)
+	score_sub.add_theme_font_size_override("font_size", 12)
 	score_sub.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	vbox.add_child(score_sub)
 
