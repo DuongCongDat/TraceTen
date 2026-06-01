@@ -1962,13 +1962,20 @@ func _setup_pause_overlay() -> void:
 	sb_chip.border_color = Color(ThemeTokens.MINT_DARK, 0.27)
 	chip.add_theme_stylebox_override("panel", sb_chip)
 	ic.add_child(chip)
-	var icon_lbl := Label.new()
-	icon_lbl.text = "⏸"
-	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon_lbl.add_theme_font_size_override("font_size", 52)
-	chip.add_child(icon_lbl)
+	# Draw pause bars (avoid emoji color issue)
+	var bars := HBoxContainer.new()
+	bars.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bars.alignment = BoxContainer.ALIGNMENT_CENTER
+	bars.add_theme_constant_override("separation", 20)
+	for _i in 2:
+		var bar := Panel.new()
+		bar.custom_minimum_size = Vector2(18, 58)
+		var sb_bar := StyleBoxFlat.new()
+		sb_bar.bg_color = ThemeTokens.MINT_DARK
+		ThemeTokens._set_radius(sb_bar, 7)
+		bar.add_theme_stylebox_override("panel", sb_bar)
+		bars.add_child(bar)
+	chip.add_child(bars)
 
 	vbox.add_child(_make_go_gap(20))
 
@@ -2073,10 +2080,10 @@ func _setup_game_over_overlay() -> void:
 	var ic := CenterContainer.new()
 	vbox.add_child(ic)
 	var icon_panel := Panel.new()
-	icon_panel.custom_minimum_size = Vector2(56, 56)
+	icon_panel.custom_minimum_size = Vector2(100, 100)
 	_go_icon_sb = StyleBoxFlat.new()
 	_go_icon_sb.bg_color = Color("fde8c4")
-	ThemeTokens._set_radius(_go_icon_sb, 18)
+	ThemeTokens._set_radius(_go_icon_sb, 30)
 	icon_panel.add_theme_stylebox_override("panel", _go_icon_sb)
 	ic.add_child(icon_panel)
 	_go_icon_lbl = Label.new()
@@ -2084,7 +2091,7 @@ func _setup_game_over_overlay() -> void:
 	_go_icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_go_icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_go_icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_go_icon_lbl.add_theme_font_size_override("font_size", 32)
+	_go_icon_lbl.add_theme_font_size_override("font_size", 52)
 	icon_panel.add_child(_go_icon_lbl)
 
 	vbox.add_child(_make_go_gap(12))
