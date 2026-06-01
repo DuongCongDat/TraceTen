@@ -2156,8 +2156,8 @@ func _update_game_over_ui(reason: String, final_score: int, time_played: float, 
 	var icon_meta := {
 		"TIME_UP":  {icon = "⏱", title = "TIME'S UP", chip = Color("fde8c4")},
 		"NO_MOVES": {icon = "✕", title = "NO MOVES",  chip = Color("e5d4ee")},
-		"NO_LIVES": {icon = "♡", title = "NO LIVES",  chip = Color("f7c8c8")},
-		"LEFT":     {icon = "←", title = "LEFT",       chip = Color("d8dfe5")},
+		"NO_LIVES": {icon = "♡", title = "NO LIVES",  chip = Color("f09898")},
+		"LEFT":     {icon = "←", title = "LEFT",       chip = Color("a8bcc8")},
 	}
 	var meta: Dictionary = icon_meta.get(reason, {icon = "◉", title = "GAME OVER", chip = Color("dceee2")})
 
