@@ -1933,7 +1933,7 @@ func _setup_pause_overlay() -> void:
 	layer.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(sw * 0.78, 0)
+	card.custom_minimum_size = Vector2(600, 800)
 	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
 	center.add_child(card)
 
@@ -1945,6 +1945,7 @@ func _setup_pause_overlay() -> void:
 	card.add_child(mc)
 
 	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_theme_constant_override("separation", 0)
 	mc.add_child(vbox)
 
@@ -2024,7 +2025,7 @@ func _setup_game_over_overlay() -> void:
 	layer.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(sw * 0.78, 0)
+	card.custom_minimum_size = Vector2(600, 800)
 	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
 	center.add_child(card)
 
@@ -2036,6 +2037,7 @@ func _setup_game_over_overlay() -> void:
 	card.add_child(mc)
 
 	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_theme_constant_override("separation", 0)
 	mc.add_child(vbox)
 
