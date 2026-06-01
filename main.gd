@@ -1925,7 +1925,7 @@ func _setup_pause_overlay() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(center)
 
-	var card := Panel.new()
+	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(260, 0)
 	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
 	center.add_child(card)
@@ -2013,7 +2013,7 @@ func _setup_game_over_overlay() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(center)
 
-	var card := Panel.new()
+	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(276, 0)
 	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
 	center.add_child(card)

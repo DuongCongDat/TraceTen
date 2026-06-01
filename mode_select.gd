@@ -333,9 +333,8 @@ func _style_save_submenu():
 	var btn_x := inner_box.get_node("BtnCancel")   as Button
 	for b in [btn_c, btn_n, btn_x]:
 		inner_box.remove_child(b)
-	# Clear remaining placeholder nodes from outer margin
-	for child in $SaveSubMenu/OuterMargin.get_children():
-		child.queue_free()
+	# Free OuterMargin (and remaining InnerBox + placeholder nodes)
+	$SaveSubMenu/OuterMargin.queue_free()
 
 	# Center container
 	var center := CenterContainer.new()
@@ -343,8 +342,8 @@ func _style_save_submenu():
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	$SaveSubMenu.add_child(center)
 
-	# Card
-	var card := Panel.new()
+	# Card — PanelContainer auto-fills its child
+	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(276, 0)
 	var sb_c := ThemeTokens.sb_card()
 	sb_c.shadow_color = Color(0, 0, 0, 0.45)
