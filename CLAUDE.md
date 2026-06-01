@@ -229,6 +229,19 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 - **Combo cap x5:** `COMBO_MAX = 5`, `combo_count = min(combo_count + 1, COMBO_MAX)`
 - **Achievement "Unstoppable" (`combo_10`) đổi điều kiện:** thay vì x10 combo → land 5 hits liên tiếp khi đang ở x5; track bằng `_combo_x5_streak` (reset khi combo bị phá)
 
+*UI Polish (Phase 7 — Pause + Game Over + Save Resume overlays):*
+- **Approach chung:** `PanelContainer` 600×800px, `VBoxContainer.alignment = CENTER`, backdrop dim, shadow card. Buttons reparented từ .tscn node (signal connections giữ nguyên).
+- **Pause overlay** (`_setup_pause_overlay()` trong `main.gd`): icon chip 120px mint soft, ⏸ emoji 52px, "PAUSED" 34px + outline, gap 40px, buttons primary 112px / secondary 100px / ghost 64px, border-radius 28px pill, btn gap 18px
+- **Game Over overlay** (`_setup_game_over_overlay()` trong `main.gd`): icon chip 100px với màu theo lý do (TIME_UP=amber, NO_MOVES=purple, NO_LIVES=hồng `#f09898`, LEFT=xanh xám `#a8bcc8`), score 57px Mono + outline, kind label 23px + outline, stat cell 110px (value 43px/label 19px `#546560`), NEW HIGH badge mint dark pill, RESTART primary + LEAVE ghost
+- **Save Resume card** (`_style_save_submenu()` trong `mode_select.gd`): icon chip 88px ▶ MINT_DARK, "SAVED GAME" kicker 23px `#546560`, mode name 57px bold + outline, stat cells 110px, CONTINUE/NEW GAME/CANCEL styled riêng
+- **Typography:** primary text + outline_size=2 (fake bold), secondary/label text màu `#546560` (darker SUB_TEXT), tất cả button Inter 700
+- **Persist `last_played_mode`:** `Global.save_config()` / `load_config()` → `user://config.json`; gọi khi vào game, load khi app khởi động
+
+⚠️ **Lưu ý kỹ thuật overlay:**
+- Dùng `PanelContainer` (không phải `Panel`) để MarginContainer bên trong tự fill đúng
+- Card width/height cứng 600×800px (không responsive) — đủ cho viewport ~720px
+- Emoji icons trong Game Over (⏱ ✕ ♡ ← ◉) có thể render màu hệ thống nếu font fallback về emoji font — nếu cần fix thì vẽ bằng ColorRect/Panel thay thế (như cách đã làm thử cho pause rồi revert)
+
 **T6 (2026-05-18)**
 - **Achievement System** — 25 thành tựu, 6 category (Beginner, Score, Combo, Mode, Special Tiles, Quirky)
 - `data/achievements.gd` — `AchievementData.LIST` config 25 entry (id, name, desc, target); `get_def(id)`
@@ -672,7 +685,7 @@ const LEVELS = [
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
 | **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
 | **T6** ✅ | Achievement System | 25 thành tựu, `Global.unlock_achievement()`, notification popup, Achievement screen |
-| **T7** ⏳ | Sound + VFX + UI Polish | ✅ UI Phase 1-6 (theme, tiles, HUD, selection, VFX, Main Menu + Mode Select); ✅ Tile redesign; ✅ Combo cap x5; ⏳ Phase 7+ (Pause, Game Over, Biomes...); ⏳ BGM |
+| **T7** ⏳ | Sound + VFX + UI Polish | ✅ UI Phase 1-7 (theme, tiles, HUD, selection, VFX, Main Menu, Mode Select, Pause/GameOver/SaveResume overlays); ✅ Tile redesign; ✅ Combo cap x5; ✅ Persist last_played_mode; ⏳ Phase 8+ (Biomes, Highscore UI...); ⏳ BGM |
 | **T8** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
 | **T9** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
 | **T10** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |
