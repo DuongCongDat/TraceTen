@@ -434,8 +434,7 @@ func _style_save_submenu():
 	_sm_time_lbl = time_cell.get_meta("val_lbl") as Label
 	stats_row.add_child(time_cell)
 
-	var g_pre_btn := Control.new()
-	g_pre_btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var g_pre_btn := Control.new(); g_pre_btn.custom_minimum_size = Vector2(0, 28)
 	vbox.add_child(g_pre_btn)
 
 	# Buttons
