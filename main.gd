@@ -122,6 +122,14 @@ var _badge_hint: Label = null
 var _badge_shuffle: Label = null
 var _badge_remove: Label = null
 
+# Overlay refs (set in _setup_pause_overlay / _setup_game_over_overlay)
+var _go_icon_sb: StyleBoxFlat = null
+var _go_icon_lbl: Label = null
+var _go_kind_label: Label = null
+var _go_score_label: Label = null
+var _go_stats_row: HBoxContainer = null
+var _go_new_high: Control = null
+
 var is_dragging = false
 var drag_start_grid = Vector2.ZERO
 var selected_tiles = []
@@ -744,10 +752,7 @@ func trigger_end_game(reason: String):
 	else:
 		time_played = accumulated_time
 
-	$GameOverLayer/VBoxContainer/ResultLabel.text     = reason_text
-	$GameOverLayer/VBoxContainer/FinalScoreLabel.text = "Score: " + str(score)
-	$GameOverLayer/VBoxContainer/TimePlayedLabel.text = "Time: " + format_time_mmss(time_played)
-	$GameOverLayer/VBoxContainer/MaxComboLabel.text   = "Best Combo: x" + str(max_combo)
+	_update_game_over_ui(reason, score, time_played, max_combo)
 	$GameOverLayer.show()
 
 	Global.submit_score(gameplay_mode, score, time_played, max_combo)
@@ -1776,6 +1781,386 @@ func _setup_hud_visuals():
 
 	queue_redraw()
 	update_power_up_ui()
+	_setup_pause_overlay()
+	_setup_game_over_overlay()
+
+
+# ==========================================
+# OVERLAY THEMING (Pause + Game Over)
+# ==========================================
+
+func _make_overlay_card_sb() -> StyleBoxFlat:
+	var sb := ThemeTokens.sb_card()
+	sb.shadow_color = Color(0, 0, 0, 0.45)
+	sb.shadow_size = 28
+	sb.shadow_offset = Vector2(0, 10)
+	return sb
+
+func _make_go_gap(h: float) -> Control:
+	var s := Control.new()
+	s.custom_minimum_size = Vector2(0, h)
+	return s
+
+func _make_go_stat_cell(value_text: String, label_text: String) -> Panel:
+	var cell := Panel.new()
+	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cell.custom_minimum_size = Vector2(0, 68)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("efe7d5")
+	ThemeTokens._set_radius(sb, 12)
+	sb.border_width_left = 1; sb.border_width_right = 1
+	sb.border_width_top = 1; sb.border_width_bottom = 1
+	sb.border_color = Color("e3d8c0")
+	cell.add_theme_stylebox_override("panel", sb)
+
+	var mc := MarginContainer.new()
+	mc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	mc.add_theme_constant_override("margin_top", 11)
+	mc.add_theme_constant_override("margin_bottom", 11)
+	mc.add_theme_constant_override("margin_left", 6)
+	mc.add_theme_constant_override("margin_right", 6)
+	cell.add_child(mc)
+
+	var vb := VBoxContainer.new()
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_theme_constant_override("separation", 5)
+	mc.add_child(vb)
+
+	var val_lbl := Label.new()
+	val_lbl.text = value_text
+	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	val_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	val_lbl.add_theme_font_size_override("font_size", 18)
+	val_lbl.add_theme_color_override("font_color", Color("2f3a36"))
+	vb.add_child(val_lbl)
+
+	var sub_font := ThemeTokens.font_inter(600)
+	sub_font.spacing_glyph = 5
+	var sub_lbl := Label.new()
+	sub_lbl.text = label_text
+	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub_lbl.add_theme_font_override("font", sub_font)
+	sub_lbl.add_theme_font_size_override("font_size", 9)
+	sub_lbl.add_theme_color_override("font_color", Color("8a9590"))
+	vb.add_child(sub_lbl)
+
+	return cell
+
+func _style_overlay_btn_primary(btn: Button, label: String) -> void:
+	btn.text = label
+	btn.custom_minimum_size = Vector2(0, 50)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 4
+	btn.add_theme_font_override("font", f)
+	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = ThemeTokens.MINT
+	ThemeTokens._set_radius(sb, 16)
+	sb.shadow_color = Color(ThemeTokens.MINT_DARK, 0.53)
+	sb.shadow_size = 6; sb.shadow_offset = Vector2(0, 4)
+	btn.add_theme_stylebox_override("normal", sb)
+	var sb_h := sb.duplicate() as StyleBoxFlat
+	sb_h.bg_color = ThemeTokens.MINT_DARK
+	btn.add_theme_stylebox_override("hover", sb_h)
+	btn.add_theme_stylebox_override("pressed", sb_h)
+
+func _style_overlay_btn_secondary(btn: Button, label: String) -> void:
+	btn.text = label
+	btn.custom_minimum_size = Vector2(0, 46)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 3
+	btn.add_theme_font_override("font", f)
+	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("efe7d5")
+	ThemeTokens._set_radius(sb, 16)
+	sb.border_width_left = 1; sb.border_width_right = 1
+	sb.border_width_top = 1; sb.border_width_bottom = 1
+	sb.border_color = Color("e3d8c0")
+	btn.add_theme_stylebox_override("normal", sb)
+	var sb_h := sb.duplicate() as StyleBoxFlat
+	sb_h.bg_color = Color("dfd6c5")
+	btn.add_theme_stylebox_override("hover", sb_h)
+	btn.add_theme_stylebox_override("pressed", sb_h)
+
+func _style_overlay_btn_ghost(btn: Button, label: String) -> void:
+	btn.text = label
+	btn.custom_minimum_size = Vector2(0, 40)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 5
+	btn.add_theme_font_override("font", f)
+	btn.add_theme_font_size_override("font_size", 12)
+	btn.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0, 0, 0, 0)
+	ThemeTokens._set_radius(sb, 14)
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb)
+	btn.add_theme_stylebox_override("pressed", sb)
+
+func _setup_pause_overlay() -> void:
+	var layer := $PauseMenuLayer
+
+	# Restyle dim
+	var dim := layer.get_node("ColorRect") as ColorRect
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.11, 0.125, 0.118, 0.48)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Grab button nodes before dismantling old vbox
+	var old_vbox := layer.get_node("VBoxContainer") as VBoxContainer
+	var btn_c  := old_vbox.get_node("BtnContinue")    as Button
+	var btn_r  := old_vbox.get_node("BtnRestart")     as Button
+	var btn_ch := old_vbox.get_node("BtnChangeLevel") as Button
+	var btn_q  := old_vbox.get_node("BtnQuit")        as Button
+	for b in [btn_c, btn_r, btn_ch, btn_q]:
+		old_vbox.remove_child(b)
+	old_vbox.queue_free()
+
+	# Centered card
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(center)
+
+	var card := Panel.new()
+	card.custom_minimum_size = Vector2(260, 0)
+	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
+	center.add_child(card)
+
+	var mc := MarginContainer.new()
+	mc.add_theme_constant_override("margin_left", 22)
+	mc.add_theme_constant_override("margin_right", 22)
+	mc.add_theme_constant_override("margin_top", 26)
+	mc.add_theme_constant_override("margin_bottom", 22)
+	card.add_child(mc)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 0)
+	mc.add_child(vbox)
+
+	# Pause icon chip
+	var ic := CenterContainer.new()
+	vbox.add_child(ic)
+	var chip := Panel.new()
+	chip.custom_minimum_size = Vector2(44, 44)
+	var sb_chip := StyleBoxFlat.new()
+	sb_chip.bg_color = Color("cde9da")
+	ThemeTokens._set_radius(sb_chip, 14)
+	sb_chip.border_width_left = 2; sb_chip.border_width_right = 2
+	sb_chip.border_width_top = 2; sb_chip.border_width_bottom = 2
+	sb_chip.border_color = Color(ThemeTokens.MINT_DARK, 0.27)
+	chip.add_theme_stylebox_override("panel", sb_chip)
+	ic.add_child(chip)
+	var icon_lbl := Label.new()
+	icon_lbl.text = "⏸"
+	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 20)
+	chip.add_child(icon_lbl)
+
+	vbox.add_child(_make_go_gap(10))
+
+	# "PAUSED" title
+	var title := Label.new()
+	title.text = "PAUSED"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var tf := ThemeTokens.font_inter(700); tf.spacing_glyph = 7
+	title.add_theme_font_override("font", tf)
+	title.add_theme_font_size_override("font_size", 13)
+	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	vbox.add_child(title)
+
+	vbox.add_child(_make_go_gap(18))
+
+	# Buttons
+	var btn_vbox := VBoxContainer.new()
+	btn_vbox.add_theme_constant_override("separation", 9)
+	vbox.add_child(btn_vbox)
+
+	_style_overlay_btn_primary(btn_c, "CONTINUE")
+	_style_overlay_btn_secondary(btn_r, "RESTART")
+	_style_overlay_btn_secondary(btn_ch, "CHANGE LEVEL")
+	_style_overlay_btn_ghost(btn_q, "LEAVE")
+	btn_vbox.add_child(btn_c)
+	btn_vbox.add_child(btn_r)
+	btn_vbox.add_child(btn_ch)
+	btn_vbox.add_child(btn_q)
+
+func _setup_game_over_overlay() -> void:
+	var layer := $GameOverLayer
+
+	# Restyle dim
+	var dim := layer.get_node("ColorRect") as ColorRect
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.11, 0.125, 0.118, 0.62)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Grab button nodes
+	var old_vbox := layer.get_node("VBoxContainer") as VBoxContainer
+	var btn_r := old_vbox.get_node("BtnRestartOver") as Button
+	var btn_q := old_vbox.get_node("BtnQuitOver")    as Button
+	old_vbox.remove_child(btn_r)
+	old_vbox.remove_child(btn_q)
+	old_vbox.queue_free()
+
+	# Centered card
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(center)
+
+	var card := Panel.new()
+	card.custom_minimum_size = Vector2(276, 0)
+	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
+	center.add_child(card)
+
+	var mc := MarginContainer.new()
+	mc.add_theme_constant_override("margin_left", 22)
+	mc.add_theme_constant_override("margin_right", 22)
+	mc.add_theme_constant_override("margin_top", 30)
+	mc.add_theme_constant_override("margin_bottom", 22)
+	card.add_child(mc)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 0)
+	mc.add_child(vbox)
+
+	# NEW HIGH badge row (hidden by default)
+	var badge_row := HBoxContainer.new()
+	badge_row.alignment = BoxContainer.ALIGNMENT_END
+	vbox.add_child(badge_row)
+	var badge_panel := Panel.new()
+	badge_panel.custom_minimum_size = Vector2(0, 26)
+	var sb_badge := StyleBoxFlat.new()
+	sb_badge.bg_color = ThemeTokens.MINT_DARK
+	ThemeTokens._set_radius(sb_badge, 999)
+	sb_badge.content_margin_left = 10; sb_badge.content_margin_right = 10
+	sb_badge.content_margin_top = 5; sb_badge.content_margin_bottom = 5
+	badge_panel.add_theme_stylebox_override("panel", sb_badge)
+	badge_row.add_child(badge_panel)
+	var badge_lbl := Label.new()
+	badge_lbl.text = "★  NEW HIGH"
+	badge_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var bf := ThemeTokens.font_inter(800); bf.spacing_glyph = 5
+	badge_lbl.add_theme_font_override("font", bf)
+	badge_lbl.add_theme_font_size_override("font_size", 9)
+	badge_lbl.add_theme_color_override("font_color", Color.WHITE)
+	badge_panel.add_child(badge_lbl)
+	_go_new_high = badge_row
+	_go_new_high.hide()
+
+	vbox.add_child(_make_go_gap(10))
+
+	# Icon chip
+	var ic := CenterContainer.new()
+	vbox.add_child(ic)
+	var icon_panel := Panel.new()
+	icon_panel.custom_minimum_size = Vector2(56, 56)
+	_go_icon_sb = StyleBoxFlat.new()
+	_go_icon_sb.bg_color = Color("fde8c4")
+	ThemeTokens._set_radius(_go_icon_sb, 18)
+	icon_panel.add_theme_stylebox_override("panel", _go_icon_sb)
+	ic.add_child(icon_panel)
+	_go_icon_lbl = Label.new()
+	_go_icon_lbl.text = "⏱"
+	_go_icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_go_icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_go_icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_go_icon_lbl.add_theme_font_size_override("font_size", 28)
+	icon_panel.add_child(_go_icon_lbl)
+
+	vbox.add_child(_make_go_gap(12))
+
+	# Kind label ("TIME'S UP" etc)
+	_go_kind_label = Label.new()
+	_go_kind_label.text = "TIME'S UP"
+	_go_kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var kf := ThemeTokens.font_inter(700); kf.spacing_glyph = 6
+	_go_kind_label.add_theme_font_override("font", kf)
+	_go_kind_label.add_theme_font_size_override("font_size", 14)
+	_go_kind_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	vbox.add_child(_go_kind_label)
+
+	vbox.add_child(_make_go_gap(16))
+
+	# Divider
+	var divider := ColorRect.new()
+	divider.custom_minimum_size = Vector2(0, 1)
+	divider.color = Color("e3d8c0")
+	vbox.add_child(divider)
+
+	vbox.add_child(_make_go_gap(14))
+
+	# Score
+	_go_score_label = Label.new()
+	_go_score_label.text = "0"
+	_go_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_go_score_label.add_theme_font_override("font", ThemeTokens.font_mono(800))
+	_go_score_label.add_theme_font_size_override("font_size", 46)
+	_go_score_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	vbox.add_child(_go_score_label)
+
+	vbox.add_child(_make_go_gap(7))
+
+	var score_sub := Label.new()
+	score_sub.text = "SCORE"
+	score_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var sf := ThemeTokens.font_inter(600); sf.spacing_glyph = 7
+	score_sub.add_theme_font_override("font", sf)
+	score_sub.add_theme_font_size_override("font_size", 10)
+	score_sub.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	vbox.add_child(score_sub)
+
+	vbox.add_child(_make_go_gap(18))
+
+	# Stats row (children rebuilt each time in _update_game_over_ui)
+	_go_stats_row = HBoxContainer.new()
+	_go_stats_row.add_theme_constant_override("separation", 8)
+	vbox.add_child(_go_stats_row)
+
+	vbox.add_child(_make_go_gap(18))
+
+	# Buttons
+	var btn_vbox := VBoxContainer.new()
+	btn_vbox.add_theme_constant_override("separation", 8)
+	vbox.add_child(btn_vbox)
+
+	_style_overlay_btn_primary(btn_r, "RESTART")
+	_style_overlay_btn_ghost(btn_q, "LEAVE")
+	btn_vbox.add_child(btn_r)
+	btn_vbox.add_child(btn_q)
+
+func _update_game_over_ui(reason: String, final_score: int, time_played: float, max_combo_val: int) -> void:
+	var icon_meta := {
+		"TIME_UP":  {icon = "⏱", title = "TIME'S UP", chip = Color("fde8c4")},
+		"NO_MOVES": {icon = "✕", title = "NO MOVES",  chip = Color("e5d4ee")},
+		"NO_LIVES": {icon = "♡", title = "NO LIVES",  chip = Color("f7c8c8")},
+		"LEFT":     {icon = "←", title = "LEFT",       chip = Color("d8dfe5")},
+	}
+	var meta: Dictionary = icon_meta.get(reason, {icon = "◉", title = "GAME OVER", chip = Color("dceee2")})
+
+	_go_icon_sb.bg_color = meta["chip"]
+	_go_icon_lbl.text    = meta["icon"]
+	_go_kind_label.text  = meta["title"]
+	_go_score_label.text = str(final_score)
+
+	# NEW HIGH check (before submit_score is called)
+	var hs := Global.load_highscore()
+	var entries: Array = hs.get(gameplay_mode, [])
+	var is_new_high := entries.is_empty() or final_score > int(entries[0].get("score", 0))
+	_go_new_high.visible = is_new_high
+
+	# Rebuild stats cells
+	for child in _go_stats_row.get_children():
+		child.queue_free()
+	_go_stats_row.add_child(_make_go_stat_cell(format_time_mmss(time_played), "TIME"))
+	_go_stats_row.add_child(_make_go_stat_cell("×" + str(max_combo_val), "BEST COMBO"))
 
 
 # ==========================================

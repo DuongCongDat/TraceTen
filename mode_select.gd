@@ -3,8 +3,11 @@ extends Control
 var _pending_mode := ""
 
 @onready var save_sub_menu := $SaveSubMenu
-@onready var save_title    := $SaveSubMenu/OuterMargin/InnerBox/Title
-@onready var save_info     := $SaveSubMenu/OuterMargin/InnerBox/LblInfo
+
+# Refs set in _style_save_submenu — updated in _show_save_menu
+var _sm_mode_lbl:  Label = null
+var _sm_score_lbl: Label = null
+var _sm_time_lbl:  Label = null
 
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -32,10 +35,14 @@ func _start_mode(mode_name: String):
 
 func _show_save_menu(mode_name: String):
 	_pending_mode = mode_name
-	save_title.text = "Resume " + mode_name.capitalize() + "?"
 	var preview := Global.get_save_preview(mode_name)
 	var t := int(preview.get("time", 0))
-	save_info.text = "Score: %d  |  Time: %02d:%02d" % [preview.get("score", 0), t / 60, t % 60]
+	if _sm_mode_lbl:
+		_sm_mode_lbl.text = mode_name.capitalize()
+	if _sm_score_lbl:
+		_sm_score_lbl.text = str(int(preview.get("score", 0)))
+	if _sm_time_lbl:
+		_sm_time_lbl.text = "%02d:%02d" % [t / 60, t % 60]
 	save_sub_menu.show()
 
 func _go_to_game(load: bool):
@@ -314,34 +321,223 @@ func _build_hero_card(
 	return card
 
 func _style_save_submenu():
-	$SaveSubMenu/DimBg.color = ThemeTokens.DIM_BG
+	# Dim backdrop
+	var dim := $SaveSubMenu/DimBg as ColorRect
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.11, 0.125, 0.118, 0.50)
 
-	# Card background behind the content
-	var card := Panel.new()
-	card.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_theme_stylebox_override("panel", ThemeTokens.sb_card())
-	$SaveSubMenu/OuterMargin.add_child(card)
-	$SaveSubMenu/OuterMargin.move_child(card, 0)
-
-	save_title.add_theme_font_override("font", ThemeTokens.font_inter(800))
-	save_title.add_theme_font_size_override("font_size", 50)
-	save_title.add_theme_color_override("font_color", ThemeTokens.TEXT)
-
-	save_info.add_theme_font_override("font", ThemeTokens.font_mono(400))
-	save_info.add_theme_font_size_override("font_size", 26)
-	save_info.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
-
+	# Grab button nodes (signals already connected in .tscn)
 	var inner_box := $SaveSubMenu/OuterMargin/InnerBox
-	for btn_name in ["BtnContinue", "BtnNewGame", "BtnCancel"]:
-		var btn := inner_box.get_node(btn_name) as Button
-		btn.custom_minimum_size = Vector2(0, 88)
-		btn.add_theme_font_override("font", ThemeTokens.font_inter(600))
-		btn.add_theme_font_size_override("font_size", 34)
-		btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
-		var sb := ThemeTokens.sb_menu_button()
-		btn.add_theme_stylebox_override("normal", sb)
-		var sb_h := sb.duplicate() as StyleBoxFlat
-		sb_h.bg_color = ThemeTokens.BOARD_BG
-		btn.add_theme_stylebox_override("hover", sb_h)
-		btn.add_theme_stylebox_override("pressed", sb_h)
+	var btn_c := inner_box.get_node("BtnContinue") as Button
+	var btn_n := inner_box.get_node("BtnNewGame")  as Button
+	var btn_x := inner_box.get_node("BtnCancel")   as Button
+	for b in [btn_c, btn_n, btn_x]:
+		inner_box.remove_child(b)
+	# Clear remaining placeholder nodes from outer margin
+	for child in $SaveSubMenu/OuterMargin.get_children():
+		child.queue_free()
+
+	# Center container
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$SaveSubMenu.add_child(center)
+
+	# Card
+	var card := Panel.new()
+	card.custom_minimum_size = Vector2(276, 0)
+	var sb_c := ThemeTokens.sb_card()
+	sb_c.shadow_color = Color(0, 0, 0, 0.45)
+	sb_c.shadow_size = 28; sb_c.shadow_offset = Vector2(0, 10)
+	card.add_theme_stylebox_override("panel", sb_c)
+	center.add_child(card)
+
+	var mc := MarginContainer.new()
+	mc.add_theme_constant_override("margin_left", 22)
+	mc.add_theme_constant_override("margin_right", 22)
+	mc.add_theme_constant_override("margin_top", 28)
+	mc.add_theme_constant_override("margin_bottom", 22)
+	card.add_child(mc)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 0)
+	mc.add_child(vbox)
+
+	# Resume icon chip
+	var ic := CenterContainer.new()
+	vbox.add_child(ic)
+	var chip := Panel.new()
+	chip.custom_minimum_size = Vector2(52, 52)
+	var sb_chip := StyleBoxFlat.new()
+	sb_chip.bg_color = Color("cde9da")
+	ThemeTokens._set_radius(sb_chip, 16)
+	sb_chip.border_width_left = 2; sb_chip.border_width_right = 2
+	sb_chip.border_width_top = 2; sb_chip.border_width_bottom = 2
+	sb_chip.border_color = Color(ThemeTokens.MINT_DARK, 0.27)
+	chip.add_theme_stylebox_override("panel", sb_chip)
+	ic.add_child(chip)
+	var icon_lbl := Label.new()
+	icon_lbl.text = "▶"
+	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 20)
+	icon_lbl.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
+	chip.add_child(icon_lbl)
+
+	# Gap
+	var g1 := Control.new(); g1.custom_minimum_size = Vector2(0, 12)
+	vbox.add_child(g1)
+
+	# Kicker + mode name
+	var kicker := Label.new()
+	kicker.text = "SAVED GAME"
+	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var kf := ThemeTokens.font_inter(600); kf.spacing_glyph = 7
+	kicker.add_theme_font_override("font", kf)
+	kicker.add_theme_font_size_override("font_size", 10)
+	kicker.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	vbox.add_child(kicker)
+
+	var g2 := Control.new(); g2.custom_minimum_size = Vector2(0, 5)
+	vbox.add_child(g2)
+
+	_sm_mode_lbl = Label.new()
+	_sm_mode_lbl.text = "—"
+	_sm_mode_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_sm_mode_lbl.add_theme_font_override("font", ThemeTokens.font_inter(800))
+	_sm_mode_lbl.add_theme_font_size_override("font_size", 22)
+	_sm_mode_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	vbox.add_child(_sm_mode_lbl)
+
+	# Divider
+	var g3 := Control.new(); g3.custom_minimum_size = Vector2(0, 16)
+	vbox.add_child(g3)
+	var div := ColorRect.new()
+	div.custom_minimum_size = Vector2(0, 1)
+	div.color = Color("e3d8c0")
+	vbox.add_child(div)
+	var g4 := Control.new(); g4.custom_minimum_size = Vector2(0, 14)
+	vbox.add_child(g4)
+
+	# Stats row: SCORE + TIME PLAYED
+	var stats_row := HBoxContainer.new()
+	stats_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(stats_row)
+
+	var score_cell := _make_sm_stat_cell("—", "SCORE")
+	_sm_score_lbl = score_cell.get_meta("val_lbl") as Label
+	stats_row.add_child(score_cell)
+
+	var time_cell := _make_sm_stat_cell("—", "TIME PLAYED")
+	_sm_time_lbl = time_cell.get_meta("val_lbl") as Label
+	stats_row.add_child(time_cell)
+
+	# Gap
+	var g5 := Control.new(); g5.custom_minimum_size = Vector2(0, 18)
+	vbox.add_child(g5)
+
+	# Buttons
+	var btn_vbox := VBoxContainer.new()
+	btn_vbox.add_theme_constant_override("separation", 8)
+	vbox.add_child(btn_vbox)
+
+	_style_sm_btn_primary(btn_c, "CONTINUE")
+	_style_sm_btn_secondary(btn_n, "NEW GAME")
+	_style_sm_btn_ghost(btn_x, "CANCEL")
+	btn_vbox.add_child(btn_c)
+	btn_vbox.add_child(btn_n)
+	btn_vbox.add_child(btn_x)
+
+func _make_sm_stat_cell(value_text: String, label_text: String) -> Panel:
+	var cell := Panel.new()
+	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cell.custom_minimum_size = Vector2(0, 68)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("efe7d5")
+	ThemeTokens._set_radius(sb, 12)
+	sb.border_width_left = 1; sb.border_width_right = 1
+	sb.border_width_top = 1; sb.border_width_bottom = 1
+	sb.border_color = Color("e3d8c0")
+	cell.add_theme_stylebox_override("panel", sb)
+	var mc := MarginContainer.new()
+	mc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	mc.add_theme_constant_override("margin_top", 11)
+	mc.add_theme_constant_override("margin_bottom", 11)
+	mc.add_theme_constant_override("margin_left", 6)
+	mc.add_theme_constant_override("margin_right", 6)
+	cell.add_child(mc)
+	var vb := VBoxContainer.new()
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_theme_constant_override("separation", 5)
+	mc.add_child(vb)
+	var val_lbl := Label.new()
+	val_lbl.text = value_text
+	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	val_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	val_lbl.add_theme_font_size_override("font_size", 18)
+	val_lbl.add_theme_color_override("font_color", Color("2f3a36"))
+	vb.add_child(val_lbl)
+	var sub_f := ThemeTokens.font_inter(600); sub_f.spacing_glyph = 5
+	var sub_lbl := Label.new()
+	sub_lbl.text = label_text
+	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub_lbl.add_theme_font_override("font", sub_f)
+	sub_lbl.add_theme_font_size_override("font_size", 9)
+	sub_lbl.add_theme_color_override("font_color", Color("8a9590"))
+	vb.add_child(sub_lbl)
+	cell.set_meta("val_lbl", val_lbl)
+	return cell
+
+func _style_sm_btn_primary(btn: Button, label: String) -> void:
+	btn.text = label
+	btn.custom_minimum_size = Vector2(0, 50)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var f := ThemeTokens.font_inter(700); f.spacing_glyph = 4
+	btn.add_theme_font_override("font", f)
+	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = ThemeTokens.MINT
+	ThemeTokens._set_radius(sb, 16)
+	sb.shadow_color = Color(ThemeTokens.MINT_DARK, 0.53)
+	sb.shadow_size = 6; sb.shadow_offset = Vector2(0, 4)
+	btn.add_theme_stylebox_override("normal", sb)
+	var sb_h := sb.duplicate() as StyleBoxFlat
+	sb_h.bg_color = ThemeTokens.MINT_DARK
+	btn.add_theme_stylebox_override("hover", sb_h)
+	btn.add_theme_stylebox_override("pressed", sb_h)
+
+func _style_sm_btn_secondary(btn: Button, label: String) -> void:
+	btn.text = label
+	btn.custom_minimum_size = Vector2(0, 46)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 3
+	btn.add_theme_font_override("font", f)
+	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("efe7d5")
+	ThemeTokens._set_radius(sb, 16)
+	sb.border_width_left = 1; sb.border_width_right = 1
+	sb.border_width_top = 1; sb.border_width_bottom = 1
+	sb.border_color = Color("e3d8c0")
+	btn.add_theme_stylebox_override("normal", sb)
+	var sb_h := sb.duplicate() as StyleBoxFlat
+	sb_h.bg_color = Color("dfd6c5")
+	btn.add_theme_stylebox_override("hover", sb_h)
+	btn.add_theme_stylebox_override("pressed", sb_h)
+
+func _style_sm_btn_ghost(btn: Button, label: String) -> void:
+	btn.text = label
+	btn.custom_minimum_size = Vector2(0, 40)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var f := ThemeTokens.font_inter(600); f.spacing_glyph = 5
+	btn.add_theme_font_override("font", f)
+	btn.add_theme_font_size_override("font_size", 12)
+	btn.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	var sb := StyleBoxFlat.new(); sb.bg_color = Color(0, 0, 0, 0)
+	ThemeTokens._set_radius(sb, 14)
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb)
+	btn.add_theme_stylebox_override("pressed", sb)
