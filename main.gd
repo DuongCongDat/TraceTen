@@ -1710,7 +1710,7 @@ func _setup_hud_visuals():
 
 	# Challenge/Zen: 2-line below score, aligned with score column (same x/width)
 	# Adventure: constraint is the key mechanic — give it more space and larger font
-	var is_adv := gameplay_mode == "CHALLENGE"
+	var is_adv: bool = gameplay_mode == "CHALLENGE"
 	var line1_h := 22.0 if is_adv else 28.0
 	var line2_h := 28.0 if is_adv else 20.0
 	# Line 1 — level name
