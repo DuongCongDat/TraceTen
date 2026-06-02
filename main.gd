@@ -645,8 +645,24 @@ func check_end_game():
 	if not scan_board_for_valid_moves():
 		if gameplay_mode == "CHALLENGE":
 			_challenge_no_moves_rescue()
+		elif gameplay_mode == "CLASSIC":
+			var _elapsed = Time.get_unix_time_from_system() - game_start_time
+			if total_duration - _elapsed > 0.0:
+				_classic_board_refill()
+			else:
+				trigger_end_game("NO_MOVES")
 		else:
 			trigger_end_game("NO_MOVES")
+
+
+func _classic_board_refill():
+	for pos in tiles.keys():
+		if is_instance_valid(tiles[pos]):
+			tiles[pos].queue_free()
+	tiles.clear()
+	show_floating_text_center("Board Cleared!", Color.GOLD)
+	AudioManager.play_sfx("powerup_gain")
+	spawn_grid()
 
 
 func _challenge_no_moves_rescue():
