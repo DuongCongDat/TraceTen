@@ -1376,9 +1376,9 @@ func _populate_level_list():
 		# "L3" number chip
 		var num_lbl := Label.new()
 		num_lbl.text = "L%d" % lv_id
-		num_lbl.custom_minimum_size = Vector2(38, 0)
+		num_lbl.custom_minimum_size = Vector2(34, 0)
 		num_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-		num_lbl.add_theme_font_size_override("font_size", 18)
+		num_lbl.add_theme_font_size_override("font_size", 15)
 		num_lbl.add_theme_color_override("font_color", accent if is_unlocked else ThemeTokens.SUB_TEXT)
 		num_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		hbox.add_child(num_lbl)
@@ -1388,7 +1388,7 @@ func _populate_level_list():
 		name_lbl.text = lv_data["name"]
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700 if is_current else 500))
-		name_lbl.add_theme_font_size_override("font_size", 22)
+		name_lbl.add_theme_font_size_override("font_size", 18)
 		name_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT if is_unlocked else ThemeTokens.SUB_TEXT)
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		hbox.add_child(name_lbl)
@@ -1397,16 +1397,18 @@ func _populate_level_list():
 		var badge_lbl := Label.new()
 		badge_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		badge_lbl.add_theme_font_override("font", ThemeTokens.font_inter(600))
-		badge_lbl.add_theme_font_size_override("font_size", 16)
 		if is_current:
+			badge_lbl.add_theme_font_size_override("font_size", 15)
 			badge_lbl.text = "HERE"
 			badge_lbl.add_theme_color_override("font_color", accent)
 		elif is_unlocked:
+			badge_lbl.add_theme_font_size_override("font_size", 15)
 			badge_lbl.text = "✓"
 			badge_lbl.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 		else:
+			badge_lbl.add_theme_font_size_override("font_size", 13)
 			badge_lbl.text = "%d pts" % lv_data["unlock_score"]
-			badge_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+			badge_lbl.add_theme_color_override("font_color", Color(ThemeTokens.SUB_TEXT.r, ThemeTokens.SUB_TEXT.g, ThemeTokens.SUB_TEXT.b, 0.6))
 		hbox.add_child(badge_lbl)
 
 		list.add_child(row_panel)
