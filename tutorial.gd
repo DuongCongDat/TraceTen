@@ -99,10 +99,14 @@ func _apply_theme() -> void:
 	step_label.add_theme_font_override("font", ThemeTokens.font_inter(700))
 	step_label.add_theme_font_size_override("font_size", 20)
 	step_label.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	step_label.offset_top    = 132.0
+	step_label.offset_bottom = 168.0
 
 	instruction_label.add_theme_font_override("font", ThemeTokens.font_inter(700))
 	instruction_label.add_theme_font_size_override("font_size", 28)
 	instruction_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	instruction_label.offset_top    = 170.0
+	instruction_label.offset_bottom = 250.0
 
 	cursor_dot.color = ThemeTokens.MINT_DARK
 
