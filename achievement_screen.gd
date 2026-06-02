@@ -93,7 +93,7 @@ func _build():
 	title.text = "Achievements"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_override("font", ThemeTokens.font_inter(800))
-	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	top_bar.add_child(title)
@@ -105,7 +105,7 @@ func _build():
 	var c1 := Label.new()
 	c1.text = str(total_unlocked)
 	c1.add_theme_font_override("font", ThemeTokens.font_mono(800))
-	c1.add_theme_font_size_override("font_size", 15)
+	c1.add_theme_font_size_override("font_size", 24)
 	c1.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 	c1.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	cnt_box.add_child(c1)
@@ -113,7 +113,7 @@ func _build():
 	var c2 := Label.new()
 	c2.text = "/%d" % total
 	c2.add_theme_font_override("font", ThemeTokens.font_mono(600))
-	c2.add_theme_font_size_override("font_size", 15)
+	c2.add_theme_font_size_override("font_size", 24)
 	c2.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	c2.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	cnt_box.add_child(c2)
@@ -194,7 +194,7 @@ func _make_cat_header(text: String, color: Color, unlocked: int, total: int) -> 
 	var name_lbl := Label.new()
 	name_lbl.text = text
 	name_lbl.add_theme_font_override("font", ThemeTokens.font_inter(800))
-	name_lbl.add_theme_font_size_override("font_size", 13)
+	name_lbl.add_theme_font_size_override("font_size", 22)
 	name_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hbox.add_child(name_lbl)
@@ -206,7 +206,7 @@ func _make_cat_header(text: String, color: Color, unlocked: int, total: int) -> 
 	var count_lbl := Label.new()
 	count_lbl.text = "%d/%d" % [unlocked, total]
 	count_lbl.add_theme_font_override("font", ThemeTokens.font_mono(500))
-	count_lbl.add_theme_font_size_override("font_size", 10)
+	count_lbl.add_theme_font_size_override("font_size", 17)
 	count_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	count_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hbox.add_child(count_lbl)
@@ -271,10 +271,10 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 	if hidden:
 		chip_lbl.text = "?"
 		chip_lbl.add_theme_font_override("font", ThemeTokens.font_mono(800))
-		chip_lbl.add_theme_font_size_override("font_size", 22)
+		chip_lbl.add_theme_font_size_override("font_size", 26)
 	else:
 		chip_lbl.text = ACH_ICONS.get(def.get("id", ""), "★")
-		chip_lbl.add_theme_font_size_override("font_size", 21)
+		chip_lbl.add_theme_font_size_override("font_size", 24)
 	chip_mc.add_child(chip_lbl)
 
 	# ── Name ─────────────────────────────────────────────────
@@ -282,7 +282,7 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 	name_lbl.text = "???" if hidden else def.get("name", "?")
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700))
-	name_lbl.add_theme_font_size_override("font_size", 11)
+	name_lbl.add_theme_font_size_override("font_size", 16)
 	name_lbl.add_theme_color_override("font_color",
 		ThemeTokens.SUB_TEXT if hidden else ThemeTokens.TEXT)
 	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -299,7 +299,7 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 		s.text = "SECRET"
 		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		s.add_theme_font_override("font", ThemeTokens.font_inter(600))
-		s.add_theme_font_size_override("font_size", 9)
+		s.add_theme_font_size_override("font_size", 14)
 		s.add_theme_color_override("font_color", Color("#b3b2a4"))
 		status_vbox.add_child(s)
 	elif in_progress:
@@ -324,7 +324,7 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 		pct_lbl.text = "%d%%" % int(prog_pct * 100.0)
 		pct_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		pct_lbl.add_theme_font_override("font", ThemeTokens.font_mono(600))
-		pct_lbl.add_theme_font_size_override("font_size", 9)
+		pct_lbl.add_theme_font_size_override("font_size", 14)
 		pct_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 		status_vbox.add_child(pct_lbl)
 	else:
@@ -332,7 +332,7 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 		s.text = "UNLOCKED" if unlocked else "LOCKED"
 		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		s.add_theme_font_override("font", ThemeTokens.font_inter(600))
-		s.add_theme_font_size_override("font_size", 9)
+		s.add_theme_font_size_override("font_size", 14)
 		s.add_theme_color_override("font_color", color if unlocked else Color("#b3b2a4"))
 		status_vbox.add_child(s)
 

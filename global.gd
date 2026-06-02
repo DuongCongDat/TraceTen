@@ -157,7 +157,21 @@ func submit_score(mode: String, score: int, time_played: float, max_combo: int):
 	var data = load_highscore()
 	if not data.has(mode):
 		data[mode] = []
-	var entry = {"score": score, "time": time_played, "max_combo": max_combo}
+
+	# Per-mode meta: games count + total score for avg
+	var mk := mode + "_meta"
+	if not data.has(mk):
+		data[mk] = {"games": 0, "total_score": 0}
+	data[mk]["games"]       = int(data[mk].get("games", 0))       + 1
+	data[mk]["total_score"] = int(data[mk].get("total_score", 0)) + score
+
+	# Short date string e.g. "Jun 2"
+	var d := Time.get_date_dict_from_system()
+	const MONTHS = ["","Jan","Feb","Mar","Apr","May","Jun",
+	                "Jul","Aug","Sep","Oct","Nov","Dec"]
+	var date_str := "%s %d" % [MONTHS[int(d["month"])], int(d["day"])]
+
+	var entry = {"score": score, "time": time_played, "max_combo": max_combo, "date": date_str}
 	data[mode].append(entry)
 	data[mode].sort_custom(func(a, b): return a["score"] > b["score"])
 	if data[mode].size() > HIGHSCORE_TOP:

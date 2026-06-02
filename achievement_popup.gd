@@ -30,7 +30,7 @@ var _title_lbl: Label
 var _name_lbl:  Label
 var _desc_lbl:  Label
 
-const PANEL_H = 68.0
+const PANEL_H = 88.0
 
 func _ready():
 	var sw := get_viewport().get_visible_rect().size.x
@@ -79,7 +79,7 @@ func _ready():
 	chip_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	chip_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	chip_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
-	chip_lbl.add_theme_font_size_override("font_size", 22)
+	chip_lbl.add_theme_font_size_override("font_size", 28)
 	chip_lbl.add_theme_color_override("font_color", Color.WHITE)
 	chip_mc.add_child(chip_lbl)
 	hbox.add_child(chip)
@@ -94,21 +94,21 @@ func _ready():
 	_title_lbl = Label.new()
 	_title_lbl.text = "ACHIEVEMENT UNLOCKED"
 	_title_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700))
-	_title_lbl.add_theme_font_size_override("font_size", 10)
+	_title_lbl.add_theme_font_size_override("font_size", 14)
 	_title_lbl.add_theme_color_override("font_color", ThemeTokens.MINT)
 	vbox.add_child(_title_lbl)
 
 	_name_lbl = Label.new()
 	_name_lbl.text = ""
 	_name_lbl.add_theme_font_override("font", ThemeTokens.font_inter(800))
-	_name_lbl.add_theme_font_size_override("font_size", 15)
+	_name_lbl.add_theme_font_size_override("font_size", 20)
 	_name_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	vbox.add_child(_name_lbl)
 
 	_desc_lbl = Label.new()
 	_desc_lbl.text = ""
 	_desc_lbl.add_theme_font_override("font", ThemeTokens.font_inter(400))
-	_desc_lbl.add_theme_font_size_override("font_size", 11)
+	_desc_lbl.add_theme_font_size_override("font_size", 15)
 	_desc_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	vbox.add_child(_desc_lbl)
 
