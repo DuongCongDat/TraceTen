@@ -92,6 +92,7 @@ func _build():
 	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ol(title, ThemeTokens.TEXT)
 	top_bar.add_child(title)
 
 	# Count: "12" mint + "/25" sub
@@ -104,14 +105,16 @@ func _build():
 	c1.add_theme_font_size_override("font_size", 24)
 	c1.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 	c1.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ol(c1, ThemeTokens.MINT_DARK)
 	cnt_box.add_child(c1)
 
 	var c2 := Label.new()
 	c2.text = "/%d" % total
-	c2.add_theme_font_override("font", ThemeTokens.font_mono(600))
+	c2.add_theme_font_override("font", ThemeTokens.font_mono(700))
 	c2.add_theme_font_size_override("font_size", 24)
 	c2.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	c2.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ol(c2, ThemeTokens.SUB_TEXT)
 	cnt_box.add_child(c2)
 
 	# ── OVERALL PROGRESS BAR ────────────────────────────────────
@@ -133,8 +136,12 @@ func _build():
 
 	# ── SCROLL + LIST ────────────────────────────────────────────
 	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	layout.add_child(scroll)
+	# Hide scrollbar — mobile uses touch scroll, desktop uses mousewheel
+	scroll.get_v_scroll_bar().modulate = Color(0, 0, 0, 0)
 
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -155,8 +162,8 @@ func _build():
 
 		var grid := GridContainer.new()
 		grid.columns = 3
-		grid.add_theme_constant_override("h_separation", 8)
-		grid.add_theme_constant_override("v_separation", 8)
+		grid.add_theme_constant_override("h_separation", 10)
+		grid.add_theme_constant_override("v_separation", 10)
 		list.add_child(grid)
 
 		for id in cat_ids:
@@ -193,6 +200,7 @@ func _make_cat_header(text: String, color: Color, unlocked: int, total: int) -> 
 	name_lbl.add_theme_font_size_override("font_size", 22)
 	name_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ol(name_lbl, ThemeTokens.TEXT)
 	hbox.add_child(name_lbl)
 
 	var spc := Control.new()
@@ -201,10 +209,11 @@ func _make_cat_header(text: String, color: Color, unlocked: int, total: int) -> 
 
 	var count_lbl := Label.new()
 	count_lbl.text = "%d/%d" % [unlocked, total]
-	count_lbl.add_theme_font_override("font", ThemeTokens.font_mono(500))
+	count_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
 	count_lbl.add_theme_font_size_override("font_size", 17)
 	count_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	count_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ol(count_lbl, ThemeTokens.SUB_TEXT)
 	hbox.add_child(count_lbl)
 
 	return hbox
@@ -228,10 +237,10 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 		panel.modulate = Color(1, 1, 1, 0.58)
 
 	var mc := MarginContainer.new()
-	mc.add_theme_constant_override("margin_left",   8)
-	mc.add_theme_constant_override("margin_right",  8)
-	mc.add_theme_constant_override("margin_top",   12)
-	mc.add_theme_constant_override("margin_bottom",10)
+	mc.add_theme_constant_override("margin_left",   10)
+	mc.add_theme_constant_override("margin_right",  10)
+	mc.add_theme_constant_override("margin_top",    26)
+	mc.add_theme_constant_override("margin_bottom", 24)
 	panel.add_child(mc)
 
 	var vbox := VBoxContainer.new()
@@ -246,7 +255,7 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 	vbox.add_child(chip_wrap)
 
 	var chip := PanelContainer.new()
-	chip.custom_minimum_size = Vector2(46, 46)
+	chip.custom_minimum_size = Vector2(64, 64)
 	var chip_sb := StyleBoxFlat.new()
 	chip_sb.bg_color = color if (unlocked or in_progress) and not hidden else Color("#dcd6c6")
 	ThemeTokens._set_radius(chip_sb, 14)
@@ -269,10 +278,10 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 	if hidden:
 		chip_lbl.text = "?"
 		chip_lbl.add_theme_font_override("font", ThemeTokens.font_mono(800))
-		chip_lbl.add_theme_font_size_override("font_size", 26)
+		chip_lbl.add_theme_font_size_override("font_size", 34)
 	else:
 		chip_lbl.text = ACH_ICONS.get(def.get("id", ""), "★")
-		chip_lbl.add_theme_font_size_override("font_size", 24)
+		chip_lbl.add_theme_font_size_override("font_size", 32)
 	chip_mc.add_child(chip_lbl)
 
 	# ── Name ─────────────────────────────────────────────────
@@ -280,9 +289,10 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 	name_lbl.text = "???" if hidden else def.get("name", "?")
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700))
-	name_lbl.add_theme_font_size_override("font_size", 16)
-	name_lbl.add_theme_color_override("font_color",
-		ThemeTokens.SUB_TEXT if hidden else ThemeTokens.TEXT)
+	name_lbl.add_theme_font_size_override("font_size", 20)
+	var _name_col: Color = ThemeTokens.SUB_TEXT if hidden else ThemeTokens.TEXT
+	name_lbl.add_theme_color_override("font_color", _name_col)
+	_ol(name_lbl, _name_col)
 	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(name_lbl)
 
@@ -296,9 +306,10 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 		var s := Label.new()
 		s.text = "SECRET"
 		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		s.add_theme_font_override("font", ThemeTokens.font_inter(600))
-		s.add_theme_font_size_override("font_size", 14)
+		s.add_theme_font_override("font", ThemeTokens.font_inter(700))
+		s.add_theme_font_size_override("font_size", 17)
 		s.add_theme_color_override("font_color", Color("#b3b2a4"))
+		_ol(s, Color("#b3b2a4"))
 		status_vbox.add_child(s)
 	elif in_progress:
 		var prog_pct := float(progress) / float(target)
@@ -321,20 +332,29 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 		var pct_lbl := Label.new()
 		pct_lbl.text = "%d%%" % int(prog_pct * 100.0)
 		pct_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		pct_lbl.add_theme_font_override("font", ThemeTokens.font_mono(600))
-		pct_lbl.add_theme_font_size_override("font_size", 14)
+		pct_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
+		pct_lbl.add_theme_font_size_override("font_size", 17)
 		pct_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+		_ol(pct_lbl, ThemeTokens.SUB_TEXT)
 		status_vbox.add_child(pct_lbl)
 	else:
 		var s := Label.new()
 		s.text = "UNLOCKED" if unlocked else "LOCKED"
 		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		s.add_theme_font_override("font", ThemeTokens.font_inter(600))
-		s.add_theme_font_size_override("font_size", 14)
-		s.add_theme_color_override("font_color", color if unlocked else Color("#b3b2a4"))
+		s.add_theme_font_override("font", ThemeTokens.font_inter(700))
+		s.add_theme_font_size_override("font_size", 17)
+		var _sc: Color = color if unlocked else Color("#b3b2a4")
+		s.add_theme_color_override("font_color", _sc)
+		_ol(s, _sc)
 		status_vbox.add_child(s)
 
 	return panel
+
+
+func _ol(lbl: Label, color: Color = Color(0, 0, 0, 0), size: int = 2) -> void:
+	var c := color if color.a > 0.0 else lbl.get_theme_color("font_color")
+	lbl.add_theme_constant_override("outline_size", size)
+	lbl.add_theme_color_override("font_outline_color", c)
 
 
 func _on_btn_back_pressed():

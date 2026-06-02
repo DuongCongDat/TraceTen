@@ -237,6 +237,12 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 - **Typography:** primary text + outline_size=2 (fake bold), secondary/label text màu `#546560` (darker SUB_TEXT), tất cả button Inter 700
 - **Persist `last_played_mode`:** `Global.save_config()` / `load_config()` → `user://config.json`; gọi khi vào game, load khi app khởi động
 
+*UI Polish (Phase 10 — Highscore + Achievement screen redesign):*
+- **Highscore** (`highscore.gd`): top bar ← 80px `sb_menu_button()` + title 34px; tab pills pill-shape với `content_margin` 28/12, active=accent solid / inactive=accent text; `StyleBoxEmpty` trên ScrollContainer để tránh hero card corner artifact; Hero card accent màu theo mode, ghost emoji `horizontal_alignment=RIGHT` + `vertical_alignment=TOP` (PanelContainer override anchor); stat boxes 3 cột (GAMES/AVG hoặc BEST PTS/BEST CB); top runs rank badge 34×34; Gravity sort by level desc; `submit_score()` thêm `level_reached` param; `_fmt_score()` comma-separated; debug nút "Reset HS"; combo uncap (track thật, multiplier `min(combo, 5)`)
+- **Achievement screen** (`achievement_screen.gd`): badge chip 64×64px, icon 32px, tên 20px, status 17px; GridContainer 3 cột gap 10; scrollbar ẩn bằng `modulate = Color(0,0,0,0)` (không dùng `visible=false` vì bị reset); `SCROLL_MODE_DISABLED` ngang
+- **Typography chung:** tất cả font weight ≥ 700; outline same-color (outline_size=2) cho text tối trên nền sáng, outline đen mờ (0.15–0.22 alpha) cho text trắng trên nền màu — trick "fake bold stroke"
+- **Hero card shadow bug:** `StyleBoxFlat` shadow render dạng rectangular blur (không follow rounded corners) → thấy halo vuông mờ ở 4 góc; fix bằng xóa shadow khỏi hero card
+
 ⚠️ **Lưu ý kỹ thuật overlay:**
 - Dùng `PanelContainer` (không phải `Panel`) để MarginContainer bên trong tự fill đúng
 - Card width/height cứng 600×800px (không responsive) — đủ cho viewport ~720px
@@ -685,7 +691,7 @@ const LEVELS = [
 | **T4** ✅ | Zen level system (infrastructure) + density fix | ZenLevels, ZenLevelManager, save/load level, density threshold |
 | **T5** ✅ | Challenge mode + Highscore | Mode mới + constraint gameplay + Smart Board Gen + Hint fix + Highscore screen |
 | **T6** ✅ | Achievement System | 25 thành tựu, `Global.unlock_achievement()`, notification popup, Achievement screen |
-| **T7** ⏳ | Sound + VFX + UI Polish | ✅ UI Phase 1-7 (theme, tiles, HUD, selection, VFX, Main Menu, Mode Select, Pause/GameOver/SaveResume overlays); ✅ Tile redesign; ✅ Combo cap x5; ✅ Persist last_played_mode; ⏳ Phase 8+ (Biomes, Highscore UI...); ⏳ BGM |
+| **T7** ⏳ | Sound + VFX + UI Polish | ✅ UI Phase 1-7 (theme, tiles, HUD, selection, VFX, Main Menu, Mode Select, Pause/GameOver/SaveResume overlays); ✅ Tile redesign; ✅ Combo cap x5; ✅ Persist last_played_mode; ✅ Phase 10 (Highscore + Achievement screen redesign); ⏳ Phase 11 (Tutorial); ⏳ BGM |
 | **T8** | Polish + Playtest + Build APK | Tinh chỉnh balance, build APK ổn định, **bắt đầu chuẩn bị demo** |
 | **T9** | Report (70%) + Demo rehearsal | Viết phần lớn report, quay video demo backup |
 | **T10** | Report final + Slides + Buffer | Hoàn thiện report, slides, dự phòng |
