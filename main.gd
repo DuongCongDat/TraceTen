@@ -1260,29 +1260,45 @@ func _build_change_level_panel():
 
 	var dim := ColorRect.new()
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0, 0, 0, 0.92)
+	dim.color = Color(0, 0, 0, 0.65)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	_change_level_layer.add_child(dim)
 
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 60)
-	margin.add_theme_constant_override("margin_top", 50)
-	margin.add_theme_constant_override("margin_right", 60)
-	margin.add_theme_constant_override("margin_bottom", 50)
-	_change_level_layer.add_child(margin)
+	# Card — centered 580×780
+	var card_w := 580.0; var card_h := 780.0
+	var sw := get_viewport_rect().size.x
+	var sh := get_viewport_rect().size.y
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", _make_overlay_card_sb())
+	card.position = Vector2((sw - card_w) * 0.5, (sh - card_h) * 0.5)
+	card.size = Vector2(card_w, card_h)
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	_change_level_layer.add_child(card)
+
+	var mc := MarginContainer.new()
+	mc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	for side in ["left","top","right","bottom"]:
+		mc.add_theme_constant_override("margin_" + side, 28)
+	card.add_child(mc)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 16)
-	margin.add_child(vbox)
+	vbox.add_theme_constant_override("separation", 14)
+	mc.add_child(vbox)
 
+	# Title
 	var title := Label.new()
-	title.text = "Change Level"
-	title.add_theme_font_size_override("font_size", 44)
+	title.text = "LEVELS"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", ThemeTokens.font_inter(800))
+	title.add_theme_font_size_override("font_size", 32)
+	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	vbox.add_child(title)
 
 	var sep := HSeparator.new()
+	var sep_sb := StyleBoxFlat.new()
+	sep_sb.bg_color = Color(ThemeTokens.BOARD_INSET.r, ThemeTokens.BOARD_INSET.g, ThemeTokens.BOARD_INSET.b, 0.6)
+	sep_sb.content_margin_top = 0; sep_sb.content_margin_bottom = 0
+	sep.add_theme_stylebox_override("separator", sep_sb)
 	vbox.add_child(sep)
 
 	var scroll := ScrollContainer.new()
@@ -1292,13 +1308,22 @@ func _build_change_level_panel():
 	var list := VBoxContainer.new()
 	list.name = "LevelList"
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 10)
+	list.add_theme_constant_override("separation", 8)
 	scroll.add_child(list)
 
+	# Back button (ghost style)
 	var btn_back := Button.new()
-	btn_back.text = "<-- Back"
-	btn_back.add_theme_font_size_override("font_size", 34)
-	btn_back.custom_minimum_size = Vector2(0, 55)
+	btn_back.text = "Back"
+	btn_back.custom_minimum_size = Vector2(0, 56)
+	var sb_back := StyleBoxFlat.new()
+	sb_back.bg_color = Color(0, 0, 0, 0)
+	ThemeTokens._set_radius(sb_back, 14)
+	btn_back.add_theme_stylebox_override("normal",  sb_back)
+	btn_back.add_theme_stylebox_override("hover",   sb_back)
+	btn_back.add_theme_stylebox_override("pressed", sb_back)
+	btn_back.add_theme_font_override("font", ThemeTokens.font_inter(700))
+	btn_back.add_theme_font_size_override("font_size", 24)
+	btn_back.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	btn_back.pressed.connect(func(): _change_level_layer.hide())
 	vbox.add_child(btn_back)
 
@@ -1310,29 +1335,90 @@ func _populate_level_list():
 
 	for i in range(ZenLevels.LEVELS.size()):
 		var lv_data = ZenLevels.LEVELS[i]
-		var lv_id: int = lv_data["id"]
+		var lv_id: int    = lv_data["id"]
 		var is_unlocked: bool = lv_id in Global.zen_unlocked_levels
-		var is_current: bool = lv_id == Global.zen_current_level
+		var is_current:  bool = lv_id == Global.zen_current_level
+		var accent: Color     = lv_data.get("accent", ThemeTokens.MINT_DARK)
 
-		var btn := Button.new()
-		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.custom_minimum_size = Vector2(0, 52)
-		btn.add_theme_font_size_override("font_size", 28 if not is_current else 30)
-
+		# Row container — PanelContainer for background
+		var row_panel := PanelContainer.new()
+		row_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var row_sb := StyleBoxFlat.new()
 		if is_current:
-			btn.text = "L%d  %s  <--" % [lv_id, lv_data["name"]]
-			btn.add_theme_color_override("font_color", Color.GOLD)
-		elif is_unlocked:
-			btn.text = "L%d  %s" % [lv_id, lv_data["name"]]
+			row_sb.bg_color = Color(accent.r, accent.g, accent.b, 0.15)
+			ThemeTokens._set_radius(row_sb, 12)
+			row_sb.border_width_left = 3
+			row_sb.border_color = accent
 		else:
-			btn.text = "L%d  %s  [%d pts]" % [lv_id, lv_data["name"], lv_data["unlock_score"]]
-			btn.disabled = true
-			btn.modulate = Color(0.5, 0.5, 0.5, 1.0)
+			row_sb.bg_color = Color(0, 0, 0, 0)
+			ThemeTokens._set_radius(row_sb, 12)
+		row_panel.add_theme_stylebox_override("panel", row_sb)
+		row_panel.modulate = Color(1, 1, 1, 0.38) if not is_unlocked else Color.WHITE
 
+		var row_mc := MarginContainer.new()
+		row_mc.add_theme_constant_override("margin_left",  12)
+		row_mc.add_theme_constant_override("margin_right", 12)
+		row_mc.add_theme_constant_override("margin_top",    8)
+		row_mc.add_theme_constant_override("margin_bottom", 8)
+		row_panel.add_child(row_mc)
+
+		var hbox := HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 10)
+		row_mc.add_child(hbox)
+
+		# Accent dot
+		var dot := ColorRect.new()
+		dot.color = accent if is_unlocked else ThemeTokens.SUB_TEXT
+		dot.custom_minimum_size = Vector2(10, 10)
+		dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		hbox.add_child(dot)
+
+		# "L3" number chip
+		var num_lbl := Label.new()
+		num_lbl.text = "L%d" % lv_id
+		num_lbl.custom_minimum_size = Vector2(38, 0)
+		num_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
+		num_lbl.add_theme_font_size_override("font_size", 18)
+		num_lbl.add_theme_color_override("font_color", accent if is_unlocked else ThemeTokens.SUB_TEXT)
+		num_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		hbox.add_child(num_lbl)
+
+		# Level name
+		var name_lbl := Label.new()
+		name_lbl.text = lv_data["name"]
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700 if is_current else 500))
+		name_lbl.add_theme_font_size_override("font_size", 22)
+		name_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT if is_unlocked else ThemeTokens.SUB_TEXT)
+		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		hbox.add_child(name_lbl)
+
+		# Right badge: CURRENT chip / checkmark / pts required
+		var badge_lbl := Label.new()
+		badge_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		badge_lbl.add_theme_font_override("font", ThemeTokens.font_inter(600))
+		badge_lbl.add_theme_font_size_override("font_size", 16)
+		if is_current:
+			badge_lbl.text = "HERE"
+			badge_lbl.add_theme_color_override("font_color", accent)
+		elif is_unlocked:
+			badge_lbl.text = "✓"
+			badge_lbl.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
+		else:
+			badge_lbl.text = "%d pts" % lv_data["unlock_score"]
+			badge_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+		hbox.add_child(badge_lbl)
+
+		list.add_child(row_panel)
+
+		# Make unlocked (non-current) rows clickable via gui_input
 		if is_unlocked and not is_current:
-			btn.pressed.connect(_on_level_selected.bind(lv_id))
-
-		list.add_child(btn)
+			row_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+			row_panel.gui_input.connect(func(ev):
+				if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
+					_on_level_selected(lv_id))
+		else:
+			row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _on_level_selected(lv_id: int):
