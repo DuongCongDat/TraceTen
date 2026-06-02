@@ -216,6 +216,7 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 	var in_progress: bool = not unlocked and progress > 0 and target > 1
 
 	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var sb    := StyleBoxFlat.new()
 	sb.bg_color = ThemeTokens.CARD_BG
 	ThemeTokens._set_radius(sb, 16)
@@ -241,6 +242,7 @@ func _make_badge(def: Dictionary, unlocked: bool, progress: int, color: Color, i
 	# ── Icon chip (46×46) ─────────────────────────────────────
 	var chip_wrap := HBoxContainer.new()
 	chip_wrap.alignment = BoxContainer.ALIGNMENT_CENTER
+	chip_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_child(chip_wrap)
 
 	var chip := PanelContainer.new()
