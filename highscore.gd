@@ -27,11 +27,11 @@ func _apply_theme():
 	$Background.color = ThemeTokens.APP_BG
 
 	# Tighten margins
-	$MarginContainer.add_theme_constant_override("margin_left",  16)
-	$MarginContainer.add_theme_constant_override("margin_right", 16)
-	$MarginContainer.add_theme_constant_override("margin_top",   18)
-	$MarginContainer.add_theme_constant_override("margin_bottom",16)
-	$MarginContainer/MainLayout.add_theme_constant_override("separation", 14)
+	$MarginContainer.add_theme_constant_override("margin_left",   44)
+	$MarginContainer.add_theme_constant_override("margin_right",  44)
+	$MarginContainer.add_theme_constant_override("margin_top",    40)
+	$MarginContainer.add_theme_constant_override("margin_bottom", 56)
+	$MarginContainer/MainLayout.add_theme_constant_override("separation", 20)
 
 	# ── Replace old title + back + separator with top-bar HBox ───────────────
 	var ml = $MarginContainer/MainLayout

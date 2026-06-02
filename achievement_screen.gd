@@ -49,10 +49,10 @@ func _build():
 
 	# Tighten margins
 	var mc = $MarginContainer
-	mc.add_theme_constant_override("margin_left",  16)
-	mc.add_theme_constant_override("margin_right", 16)
-	mc.add_theme_constant_override("margin_top",   18)
-	mc.add_theme_constant_override("margin_bottom",16)
+	mc.add_theme_constant_override("margin_left",   44)
+	mc.add_theme_constant_override("margin_right",  44)
+	mc.add_theme_constant_override("margin_top",    40)
+	mc.add_theme_constant_override("margin_bottom", 56)
 
 	# Free old layout and rebuild from scratch
 	var old_layout = mc.get_node_or_null("Layout")
@@ -61,7 +61,7 @@ func _build():
 
 	var layout := VBoxContainer.new()
 	layout.name = "Layout"
-	layout.add_theme_constant_override("separation", 12)
+	layout.add_theme_constant_override("separation", 20)
 	mc.add_child(layout)
 
 	# ── TOP BAR ─────────────────────────────────────────────────
