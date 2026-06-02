@@ -509,7 +509,7 @@ func _run_howtoplay(gen: int):
 
 func _run_virus(gen: int):
 	var VPOS  := Vector2(1, 1)
-	var VPOS2 := Vector2(2, 1)   # spread target
+	var VPOS2 := Vector2(1, 2)   # spread target — tile below (value 6)
 
 	while gen == _demo_gen:
 		# ── PART 1: HP countdown + spread ──
@@ -588,7 +588,12 @@ func _run_virus(gen: int):
 			_tile_labels[VPOS].text = "6"
 		if gen != _demo_gen: return
 
-		# New virus spawns at adjacent tile simultaneously
+		# Remove existing tile at spread target, then infect it
+		if _tile_rects.has(VPOS2):
+			_tile_rects[VPOS2].queue_free()
+			_tile_rects.erase(VPOS2)
+			_tile_labels.erase(VPOS2)
+			_tile_styles.erase(VPOS2)
 		_spawn_tile(VPOS2, 5, ThemeTokens.VIRUS_BG, ThemeTokens.VIRUS_TEXT)
 		_add_virus_dots(VPOS2, 3)
 		if _tile_rects.has(VPOS2):
