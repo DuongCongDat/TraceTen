@@ -108,12 +108,26 @@ func _apply_theme() -> void:
 
 	var btn_back_demo: Button = $DemoLayer/ControlBar/BtnBackDemo
 	var btn_replay: Button    = $DemoLayer/ControlBar/BtnReplay
-	for btn: Button in [btn_back_demo, btn_replay]:
-		for state in ["normal", "hover", "pressed", "focus"]:
-			btn.add_theme_stylebox_override(state, ThemeTokens.sb_menu_button())
-		btn.add_theme_font_override("font", ThemeTokens.font_inter(700))
-		btn.add_theme_font_size_override("font_size", 26)
-		btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
+
+	# Move back button to top-left corner of DemoLayer
+	btn_back_demo.reparent(demo_layer, false)
+	btn_back_demo.text = "←"
+	btn_back_demo.custom_minimum_size = Vector2(ThemeTokens.MENU_BUTTON_SIZE, ThemeTokens.MENU_BUTTON_SIZE)
+	btn_back_demo.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	btn_back_demo.position = Vector2(44, 44)
+
+	for state in ["normal", "hover", "pressed", "focus"]:
+		btn_back_demo.add_theme_stylebox_override(state, ThemeTokens.sb_menu_button())
+	btn_back_demo.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	btn_back_demo.add_theme_font_size_override("font_size", 34)
+	btn_back_demo.add_theme_color_override("font_color", ThemeTokens.TEXT)
+
+	# Replay stays at bottom center
+	for state in ["normal", "hover", "pressed", "focus"]:
+		btn_replay.add_theme_stylebox_override(state, ThemeTokens.sb_menu_button())
+	btn_replay.add_theme_font_override("font", ThemeTokens.font_inter(700))
+	btn_replay.add_theme_font_size_override("font_size", 26)
+	btn_replay.add_theme_color_override("font_color", ThemeTokens.TEXT)
 
 
 func _maybe_show_timer_warning():
