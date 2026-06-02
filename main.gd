@@ -60,6 +60,11 @@ var current_mode = "RECTANGLE"
 # --- ACHIEVEMENT TRACKING (per-game, reset in setup_mode_config) ---
 var _mutation_types_cleared: Array = []
 
+# --- BIOME THEME (ZEN / CHALLENGE — changes per level) ---
+var _biome_board_bg:    Color = ThemeTokens.BOARD_BG
+var _biome_board_inset: Color = ThemeTokens.BOARD_INSET
+var _biome_accent:      Color = ThemeTokens.MINT_DARK
+
 var unlocked_modes = ["CLASSIC"]
 var seen_tutorials = {
 	"CLASSIC": false,
@@ -235,6 +240,7 @@ func setup_mode_config():
 		btn_change_level_hud.hide()
 
 	update_power_up_ui()
+	_apply_zen_level_theme()
 
 
 # ==========================================
@@ -251,19 +257,19 @@ func _draw():
 	draw_rect(Rect2(0.0, sh - 170.0, sw, 170.0), ThemeTokens.PHONE_BG)
 
 	# Board background — full-width game area so side strips match center
-	draw_rect(Rect2(0.0, 192.0, sw, sh - 192.0 - 170.0), ThemeTokens.BOARD_BG)
+	draw_rect(Rect2(0.0, 192.0, sw, sh - 192.0 - 170.0), _biome_board_bg)
 	if tile_size > 0:
 		var pad = tile_size * 0.10
 		var board_pos = Vector2(start_pos.x - tile_size * 0.5 - pad, start_pos.y - tile_size * 0.5 - pad)
 		var board_size = Vector2(grid_cols * tile_size + pad * 2, grid_rows * tile_size + pad * 2)
-		draw_rect(Rect2(board_pos, board_size), ThemeTokens.BOARD_INSET, false, 1.5)
+		draw_rect(Rect2(board_pos, board_size), _biome_board_inset, false, 1.5)
 
 	# Selection box visual (fill + border, colour depends on sum)
 	if selection_box and selection_box.visible:
 		var sel_rect = Rect2(selection_box.position, selection_box.size)
 		if _selection_sum == 10:
-			draw_rect(sel_rect, Color(ThemeTokens.MINT.r, ThemeTokens.MINT.g, ThemeTokens.MINT.b, 0.18))
-			_draw_dashed_rect(sel_rect, ThemeTokens.MINT_DARK, 2.5, 10.0)
+			draw_rect(sel_rect, Color(_biome_accent.r, _biome_accent.g, _biome_accent.b, 0.18))
+			_draw_dashed_rect(sel_rect, _biome_accent, 2.5, 10.0)
 		elif _selection_sum > 10:
 			draw_rect(sel_rect, Color(ThemeTokens.NEG_BG.r, ThemeTokens.NEG_BG.g, ThemeTokens.NEG_BG.b, 0.18))
 			_draw_dashed_rect(sel_rect, ThemeTokens.NEG_DARK, 2.5, 10.0)
@@ -603,12 +609,26 @@ func _check_zen_level_unlock():
 		var level_name = ZenLevelManager.get_level_name(next_level)
 		show_floating_text_center("L%d %s unlocked!" % [next_level, level_name], Color.GOLD)
 		Global.zen_current_level = next_level
+		_apply_zen_level_theme()
 		_update_challenge_hud()
 		if gameplay_mode == "CHALLENGE":
 			if next_level == 6:
 				Global.unlock_achievement("challenge_l6")
 			if next_level == 12:
 				Global.unlock_achievement("challenge_l12")
+
+
+func _apply_zen_level_theme():
+	if gameplay_mode in ["ZEN", "CHALLENGE"]:
+		var lv = ZenLevels.LEVELS[Global.zen_current_level - 1]
+		_biome_board_bg    = lv.get("board_bg",    ThemeTokens.BOARD_BG)
+		_biome_board_inset = lv.get("board_inset", ThemeTokens.BOARD_INSET)
+		_biome_accent      = lv.get("accent",      ThemeTokens.MINT_DARK)
+	else:
+		_biome_board_bg    = ThemeTokens.BOARD_BG
+		_biome_board_inset = ThemeTokens.BOARD_INSET
+		_biome_accent      = ThemeTokens.MINT_DARK
+	queue_redraw()
 
 
 # ==========================================
@@ -1319,6 +1339,7 @@ func _populate_level_list():
 
 func _on_level_selected(lv_id: int):
 	Global.zen_current_level = lv_id
+	_apply_zen_level_theme()
 	_change_level_layer.hide()
 	is_paused = false
 	pause_menu.hide()
@@ -2520,6 +2541,7 @@ func _load_game_state():
 	if gameplay_mode in ["ZEN", "CHALLENGE"]:
 		Global.zen_current_level   = int(data.get("current_level", 1))
 		Global.zen_unlocked_levels = data.get("unlocked_levels", [1])
+		_apply_zen_level_theme()
 
 	for td in data.get("tiles", []):
 		var pos = Vector2(int(td["x"]), int(td["y"]))
@@ -2635,6 +2657,7 @@ func _debug_challenge_next_level():
 	Global.zen_current_level = next
 	if not (next in Global.zen_unlocked_levels):
 		Global.zen_unlocked_levels.append(next)
+	_apply_zen_level_theme()
 	_update_challenge_hud()
 	show_floating_text_center("L%d %s" % [next, ZenLevelManager.get_level_name(next)], Color.GOLD)
 
