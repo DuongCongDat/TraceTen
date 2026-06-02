@@ -577,28 +577,29 @@ func _run_virus(gen: int):
 		await get_tree().create_timer(0.6).timeout
 		if gen != _demo_gen: return
 
-		# Old virus fades out
-		if _tile_rects.has(VPOS):
-			var tw_fade := create_tween()
-			tw_fade.tween_property(_tile_rects[VPOS], "modulate:a", 0.0, 0.30)
-			await tw_fade.finished
-			_tile_rects[VPOS].queue_free()
-			_tile_rects.erase(VPOS)
-			_tile_labels.erase(VPOS)
-			_tile_styles.erase(VPOS)
-			_virus_dot_styles.erase(VPOS)
+		# Original virus resets HP (stays in place)
+		if _tile_styles.has(VPOS):
+			var tw_flash := create_tween()
+			tw_flash.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_GLOW, 0.15)
+			tw_flash.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_BG,   0.15)
+			await tw_flash.finished
+		_set_virus_dots(VPOS, 3)   # reset HP on original tile
+		if _tile_labels.has(VPOS):
+			_tile_labels[VPOS].text = "6"
 		if gen != _demo_gen: return
 
-		# New virus spawns at VPOS2
+		# New virus spawns at adjacent tile simultaneously
 		_spawn_tile(VPOS2, 5, ThemeTokens.VIRUS_BG, ThemeTokens.VIRUS_TEXT)
 		_add_virus_dots(VPOS2, 3)
 		if _tile_rects.has(VPOS2):
 			_tile_rects[VPOS2].modulate.a = 0.0
 			var tw_in := create_tween()
-			tw_in.tween_property(_tile_rects[VPOS2], "modulate:a", 1.0, 0.30)
+			tw_in.tween_property(_tile_rects[VPOS2], "modulate:a", 1.0, 0.35)
 			await tw_in.finished
+		if gen != _demo_gen: return
+
 		_float_text("-10", Color(0.769, 0.20, 0.20))
-		instruction_label.text = "−10 points!  New virus with full HP."
+		instruction_label.text = "Original resets HP, neighbour infected!  −10 pts."
 		await get_tree().create_timer(3.0).timeout
 		if gen != _demo_gen: return
 
