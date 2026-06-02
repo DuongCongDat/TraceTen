@@ -69,22 +69,18 @@ func _build():
 	top_bar.add_theme_constant_override("separation", 12)
 	layout.add_child(top_bar)
 
-	# Back chip
+	# Back button — same style as mode_select
 	var btn_back := Button.new()
-	btn_back.text = "‹"
-	btn_back.custom_minimum_size = Vector2(38, 38)
-	var bb_sb := StyleBoxFlat.new()
-	bb_sb.bg_color = ThemeTokens.CARD_BG
-	ThemeTokens._set_radius(bb_sb, 12)
-	bb_sb.border_width_left = 1; bb_sb.border_width_right  = 1
-	bb_sb.border_width_top  = 1; bb_sb.border_width_bottom = 1
-	bb_sb.border_color = ThemeTokens.BOARD_INSET
-	btn_back.add_theme_stylebox_override("normal",  bb_sb)
-	btn_back.add_theme_stylebox_override("hover",   bb_sb)
-	btn_back.add_theme_stylebox_override("pressed", bb_sb)
-	btn_back.add_theme_font_override("font", ThemeTokens.font_inter(700))
-	btn_back.add_theme_font_size_override("font_size", 20)
+	btn_back.text = "←"
+	btn_back.custom_minimum_size = Vector2(80, 80)
+	btn_back.add_theme_font_size_override("font_size", 44)
 	btn_back.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	var sb_back := ThemeTokens.sb_menu_button()
+	btn_back.add_theme_stylebox_override("normal", sb_back)
+	var sb_bh := sb_back.duplicate() as StyleBoxFlat
+	sb_bh.bg_color = ThemeTokens.BOARD_BG
+	btn_back.add_theme_stylebox_override("hover",   sb_bh)
+	btn_back.add_theme_stylebox_override("pressed", sb_bh)
 	btn_back.pressed.connect(_on_btn_back_pressed)
 	top_bar.add_child(btn_back)
 
