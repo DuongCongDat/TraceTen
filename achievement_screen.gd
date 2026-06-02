@@ -11,7 +11,39 @@ const CATEGORIES = [
 
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	_apply_theme()
 	_build_ui()
+
+
+func _apply_theme():
+	# Background
+	var bg := ColorRect.new()
+	bg.color = ThemeTokens.APP_BG
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.z_index = -1
+	add_child(bg)
+	move_child(bg, 0)
+
+	# Title
+	var title = $MarginContainer/Layout/Title
+	title.text = "ACHIEVEMENTS"
+	title.add_theme_font_override("font", ThemeTokens.font_inter(800))
+	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
+
+	# Back button
+	var btn = $MarginContainer/Layout/BtnBack
+	btn.text = "Back"
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0, 0, 0, 0)
+	ThemeTokens._set_radius(sb, 14)
+	btn.add_theme_stylebox_override("normal",  sb)
+	btn.add_theme_stylebox_override("hover",   sb)
+	btn.add_theme_stylebox_override("pressed", sb)
+	btn.add_theme_font_override("font", ThemeTokens.font_inter(700))
+	btn.add_theme_font_size_override("font_size", 24)
+	btn.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+
 
 func _build_ui():
 	var list = $MarginContainer/Layout/Scroll/List
@@ -25,76 +57,94 @@ func _build_ui():
 			var unlocked: bool = entry.get("unlocked", false)
 			var progress: int  = int(entry.get("progress", 0))
 			list.add_child(_make_row(def, unlocked, progress))
-		list.add_child(_make_spacer(12))
+		list.add_child(_make_spacer(6))
+
 
 func _make_header(text: String) -> Label:
-	var lbl = Label.new()
-	lbl.text = "— " + text + " —"
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 24)
-	lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1))
-	lbl.custom_minimum_size.y = 40
+	var lbl := Label.new()
+	lbl.text = text.to_upper()
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	lbl.add_theme_font_override("font", ThemeTokens.font_inter(700))
+	lbl.add_theme_font_size_override("font_size", 18)
+	lbl.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
+	lbl.custom_minimum_size.y = 36
 	return lbl
 
-func _make_row(def: Dictionary, unlocked: bool, progress: int) -> PanelContainer:
-	var panel = PanelContainer.new()
-	panel.custom_minimum_size.y = 72
 
-	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 16)
-	panel.add_child(hbox)
+func _make_row(def: Dictionary, unlocked: bool, progress: int) -> PanelContainer:
+	var panel := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = ThemeTokens.CARD_BG
+	ThemeTokens._set_radius(sb, 12)
+	sb.border_width_left = 1; sb.border_width_right  = 1
+	sb.border_width_top  = 1; sb.border_width_bottom = 1
+	sb.border_color = Color(ThemeTokens.BOARD_INSET.r, ThemeTokens.BOARD_INSET.g, ThemeTokens.BOARD_INSET.b, 0.5)
+	panel.add_theme_stylebox_override("panel", sb)
+	if not unlocked:
+		panel.modulate = Color(1, 1, 1, 0.55)
+
+	var mc := MarginContainer.new()
+	mc.add_theme_constant_override("margin_left",  14)
+	mc.add_theme_constant_override("margin_right", 14)
+	mc.add_theme_constant_override("margin_top",   10)
+	mc.add_theme_constant_override("margin_bottom",10)
+	panel.add_child(mc)
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 12)
+	mc.add_child(hbox)
 
 	# Icon
-	var icon = Label.new()
+	var icon := Label.new()
 	icon.text = "★" if unlocked else "○"
-	icon.add_theme_font_size_override("font_size", 32)
-	icon.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1) if unlocked else Color(0.45, 0.47, 0.55, 1))
-	icon.custom_minimum_size.x = 40
+	icon.add_theme_font_size_override("font_size", 26)
+	icon.add_theme_color_override("font_color", ThemeTokens.MINT_DARK if unlocked else ThemeTokens.SUB_TEXT)
+	icon.custom_minimum_size.x = 32
 	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hbox.add_child(icon)
 
 	# Name + desc
-	var vbox = VBoxContainer.new()
+	var vbox := VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 2)
 	hbox.add_child(vbox)
 
-	var name_lbl = Label.new()
+	var name_lbl := Label.new()
 	name_lbl.text = def.get("name", "?")
-	name_lbl.add_theme_font_size_override("font_size", 26)
-	var name_color = Color(1, 1, 1, 1) if unlocked else Color(0.55, 0.58, 0.65, 1)
-	name_lbl.add_theme_color_override("font_color", name_color)
+	name_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700 if unlocked else 500))
+	name_lbl.add_theme_font_size_override("font_size", 22)
+	name_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT if unlocked else ThemeTokens.SUB_TEXT)
 	vbox.add_child(name_lbl)
 
-	var desc_lbl = Label.new()
+	var desc_lbl := Label.new()
 	desc_lbl.text = def.get("desc", "")
-	desc_lbl.add_theme_font_size_override("font_size", 19)
-	desc_lbl.add_theme_color_override("font_color", Color(0.65, 0.68, 0.75, 1))
+	desc_lbl.add_theme_font_override("font", ThemeTokens.font_inter(400))
+	desc_lbl.add_theme_font_size_override("font_size", 17)
+	desc_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(desc_lbl)
 
-	# Progress (right side, only if target > 1)
+	# Progress (right, only if target > 1)
 	var target: int = def.get("target", 1)
 	if target > 1:
-		var prog_lbl = Label.new()
-		prog_lbl.text = "%d / %d" % [min(progress, target), target] if not unlocked else "Done"
-		prog_lbl.add_theme_font_size_override("font_size", 22)
-		prog_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1) if unlocked else Color(0.65, 0.68, 0.75, 1))
-		prog_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		prog_lbl.custom_minimum_size.x = 80
-		prog_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		hbox.add_child(prog_lbl)
-
-	# Dim panel if locked
-	if not unlocked:
-		panel.modulate = Color(1, 1, 1, 0.6)
+		var prog := Label.new()
+		prog.text = "Done" if unlocked else "%d / %d" % [min(progress, target), target]
+		prog.add_theme_font_override("font", ThemeTokens.font_mono(700))
+		prog.add_theme_font_size_override("font_size", 19)
+		prog.add_theme_color_override("font_color", ThemeTokens.MINT_DARK if unlocked else ThemeTokens.SUB_TEXT)
+		prog.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+		prog.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		prog.custom_minimum_size.x = 75
+		hbox.add_child(prog)
 
 	return panel
 
+
 func _make_spacer(height: int) -> Control:
-	var s = Control.new()
+	var s := Control.new()
 	s.custom_minimum_size.y = height
 	return s
+
 
 func _on_btn_back_pressed():
 	get_tree().change_scene_to_file("res://main_menu.tscn")
