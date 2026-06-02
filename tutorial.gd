@@ -23,7 +23,7 @@ const TUTORIALS = [
 		"id": "virus",
 		"name": "Tick, Tick…",
 		"tag": "VIRUS",
-		"desc": "A Virus mutates its value over time. Clear it before its dots run out — or it detonates and spreads.",
+		"desc": "Each tick the Virus changes its value and loses one HP dot. When all dots are gone it spreads — penalising you.",
 		"icon": "!",
 		"accent": Color(0.478, 0.616, 0.365),   # VIRUS_DARK
 	},
@@ -50,9 +50,10 @@ const TILE_SIZE := 100.0
 var _current_id   := ""
 var _demo_gen     := 0
 
-var _tile_rects:  Dictionary = {}   # Vector2 → Panel
-var _tile_labels: Dictionary = {}   # Vector2 → Label
-var _tile_styles: Dictionary = {}   # Vector2 → StyleBoxFlat
+var _tile_rects:      Dictionary = {}   # Vector2 → Panel
+var _tile_labels:     Dictionary = {}   # Vector2 → Label
+var _tile_styles:     Dictionary = {}   # Vector2 → StyleBoxFlat
+var _virus_dot_styles: Dictionary = {}  # Vector2 → Array[StyleBoxFlat]
 
 @onready var list_layer:        Control       = $ListLayer
 @onready var demo_layer:        Control       = $DemoLayer
@@ -296,6 +297,7 @@ func _clear_board():
 	_tile_rects.clear()
 	_tile_labels.clear()
 	_tile_styles.clear()
+	_virus_dot_styles.clear()
 
 
 func _spawn_tile(gpos: Vector2, value: int,
@@ -337,6 +339,43 @@ func _spawn_tile(gpos: Vector2, value: int,
 	_tile_rects[gpos]  = panel
 	_tile_labels[gpos] = lbl
 	_tile_styles[gpos] = sb
+
+
+func _add_virus_dots(gpos: Vector2, count: int) -> void:
+	if not _tile_rects.has(gpos):
+		return
+	var panel: Panel = _tile_rects[gpos]
+	var sz := panel.size
+	var dot_size := 8.0
+	var dot_gap  := 5.0
+	var total_w  := count * dot_size + (count - 1) * dot_gap
+	var start_x  := (sz.x - total_w) * 0.5
+	var y        := sz.y - 14.0
+	var styles: Array = []
+	for i in count:
+		var dot := Panel.new()
+		dot.size     = Vector2(dot_size, dot_size)
+		dot.position = Vector2(start_x + i * (dot_size + dot_gap), y)
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var sb := StyleBoxFlat.new()
+		sb.corner_radius_top_left     = 999
+		sb.corner_radius_top_right    = 999
+		sb.corner_radius_bottom_right = 999
+		sb.corner_radius_bottom_left  = 999
+		sb.bg_color = ThemeTokens.VIRUS_DARK
+		dot.add_theme_stylebox_override("panel", sb)
+		panel.add_child(dot)
+		styles.append(sb)
+	_virus_dot_styles[gpos] = styles
+
+
+func _set_virus_dots(gpos: Vector2, remaining: int) -> void:
+	if not _virus_dot_styles.has(gpos):
+		return
+	var styles: Array = _virus_dot_styles[gpos]
+	for i in styles.size():
+		var sb: StyleBoxFlat = styles[i]
+		sb.bg_color = ThemeTokens.VIRUS_DARK if i < remaining else Color(ThemeTokens.VIRUS_DARK.r, ThemeTokens.VIRUS_DARK.g, ThemeTokens.VIRUS_DARK.b, 0.25)
 
 
 func _grid_px(gpos: Vector2) -> Vector2:
@@ -464,99 +503,106 @@ func _run_howtoplay(gen: int):
 
 # ══════════════════════════════════════════════
 # TUTORIAL 2 — VIRUS TILE
+# Correct mechanic: each tick → change value + consume 1 HP dot.
+# When HP dots = 0 → spreads to adjacent tile, -10 penalty.
 # ══════════════════════════════════════════════
 
 func _run_virus(gen: int):
-	var VPOS := Vector2(1, 1)
+	var VPOS  := Vector2(1, 1)
+	var VPOS2 := Vector2(2, 1)   # spread target
 
 	while gen == _demo_gen:
-		# ── PART 1: countdown + explosion ──
+		# ── PART 1: HP countdown + spread ──
 		_clear_board()
 		selection_box.hide()
 		cursor_dot.hide()
 
 		var layout1 := {
 			Vector2(0,0):5, Vector2(1,0):2, Vector2(2,0):3,
-			Vector2(0,1):4, Vector2(2,1):1,
+			Vector2(0,1):4,
 			Vector2(0,2):7, Vector2(1,2):6, Vector2(2,2):8,
 		}
 		for pos in layout1:
 			_spawn_tile(pos, layout1[pos])
 		_spawn_tile(VPOS, 3, ThemeTokens.VIRUS_BG, ThemeTokens.VIRUS_TEXT)
+		_add_virus_dots(VPOS, 3)
 
 		step_label.text = "Virus Tile  •  1 / 2"
-		instruction_label.text = "Every 10s, the Virus changes to a random value."
-		await get_tree().create_timer(2.0).timeout
+		instruction_label.text = "The Virus has HP dots. Each tick: value changes + 1 dot consumed."
+		await get_tree().create_timer(2.5).timeout
 		if gen != _demo_gen: return
 
-		var changes    := [7, -2, 0]
-		var change_msgs := [
-			"Could be any number — positive...",
-			"...or negative.",
-			"If it hits 0 — it EXPLODES!",
-		]
-		for i in changes.size():
+		# Tick 1: value 3→7, dots 3→2
+		if _tile_styles.has(VPOS):
+			var tw := create_tween()
+			tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_GLOW, 0.18)
+			tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_BG,   0.18)
+			await tw.finished
+		if gen != _demo_gen: return
+		if _tile_labels.has(VPOS):
+			_tile_labels[VPOS].text = "7"
+		_set_virus_dots(VPOS, 2)
+		instruction_label.text = "Tick! Value mutates, one dot consumed."
+		await get_tree().create_timer(1.8).timeout
+		if gen != _demo_gen: return
+
+		# Tick 2: value 7→-2, dots 2→1
+		if _tile_styles.has(VPOS):
+			var tw := create_tween()
+			tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_GLOW, 0.18)
+			tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_BG,   0.18)
+			await tw.finished
+		if gen != _demo_gen: return
+		if _tile_labels.has(VPOS):
+			_tile_labels[VPOS].text = "-2"
+		_set_virus_dots(VPOS, 1)
+		instruction_label.text = "Last dot! Clear it before the next tick!"
+		# Urgency pulses on last dot
+		for _i in 3:
 			if gen != _demo_gen: return
 			if _tile_styles.has(VPOS):
 				var tw := create_tween()
-				tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_GLOW, 0.18)
-				tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_BG,   0.18)
+				tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_GLOW, 0.15)
+				tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_BG,   0.15)
 				await tw.finished
-			if gen != _demo_gen: return
-
-			if _tile_labels.has(VPOS):
-				_tile_labels[VPOS].text = str(changes[i])
-			instruction_label.text = change_msgs[i]
-
-			if changes[i] == 0:
-				await get_tree().create_timer(0.8).timeout
-				if gen != _demo_gen: return
-
-				if _tile_rects.has(VPOS):
-					var expl := create_tween()
-					expl.tween_property(_tile_rects[VPOS], "scale", Vector2(2.0, 2.0), 0.18)
-					expl.tween_property(_tile_rects[VPOS], "modulate:a", 0.0, 0.22)
-					await expl.finished
-					_tile_rects[VPOS].queue_free()
-					_tile_rects.erase(VPOS)
-					_tile_labels.erase(VPOS)
-					_tile_styles.erase(VPOS)
-
-				# Hole tile
-				var hole := Panel.new()
-				var hole_sz := Vector2(TILE_SIZE - 8, TILE_SIZE - 8)
-				hole.size = hole_sz
-				hole.position = -hole_sz / 2.0
-				var sb_hole := StyleBoxFlat.new()
-				sb_hole.bg_color = ThemeTokens.BOARD_INSET
-				sb_hole.corner_radius_top_left     = ThemeTokens.TILE_RADIUS
-				sb_hole.corner_radius_top_right    = ThemeTokens.TILE_RADIUS
-				sb_hole.corner_radius_bottom_right = ThemeTokens.TILE_RADIUS
-				sb_hole.corner_radius_bottom_left  = ThemeTokens.TILE_RADIUS
-				hole.add_theme_stylebox_override("panel", sb_hole)
-				board_container.add_child(hole)
-
-				var x_lbl := Label.new()
-				x_lbl.text = "✕"
-				x_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-				x_lbl.add_theme_font_size_override("font_size", 38)
-				x_lbl.add_theme_color_override("font_color", ThemeTokens.NEG_DARK)
-				x_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-				x_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-				x_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-				hole.add_child(x_lbl)
-
-				instruction_label.text = "Leaves a permanent hole in the board!"
-				await get_tree().create_timer(3.0).timeout
-				if gen != _demo_gen: return
-			else:
-				await get_tree().create_timer(1.8).timeout
-
-		if gen != _demo_gen: return
-		await get_tree().create_timer(1.5).timeout
+			await get_tree().create_timer(0.1).timeout
 		if gen != _demo_gen: return
 
-		# ── PART 2: clear it in time ──
+		await get_tree().create_timer(1.2).timeout
+		if gen != _demo_gen: return
+
+		# Tick 3: dots hit 0 → SPREAD
+		_set_virus_dots(VPOS, 0)
+		instruction_label.text = "HP depleted — Virus spreads to a neighbour!"
+		await get_tree().create_timer(0.6).timeout
+		if gen != _demo_gen: return
+
+		# Old virus fades out
+		if _tile_rects.has(VPOS):
+			var tw_fade := create_tween()
+			tw_fade.tween_property(_tile_rects[VPOS], "modulate:a", 0.0, 0.30)
+			await tw_fade.finished
+			_tile_rects[VPOS].queue_free()
+			_tile_rects.erase(VPOS)
+			_tile_labels.erase(VPOS)
+			_tile_styles.erase(VPOS)
+			_virus_dot_styles.erase(VPOS)
+		if gen != _demo_gen: return
+
+		# New virus spawns at VPOS2
+		_spawn_tile(VPOS2, 5, ThemeTokens.VIRUS_BG, ThemeTokens.VIRUS_TEXT)
+		_add_virus_dots(VPOS2, 3)
+		if _tile_rects.has(VPOS2):
+			_tile_rects[VPOS2].modulate.a = 0.0
+			var tw_in := create_tween()
+			tw_in.tween_property(_tile_rects[VPOS2], "modulate:a", 1.0, 0.30)
+			await tw_in.finished
+		_float_text("-10", Color(0.769, 0.20, 0.20))
+		instruction_label.text = "−10 points!  New virus with full HP."
+		await get_tree().create_timer(3.0).timeout
+		if gen != _demo_gen: return
+
+		# ── PART 2: clear before spread ──
 		_clear_board()
 		selection_box.hide()
 		cursor_dot.hide()
@@ -569,33 +615,21 @@ func _run_virus(gen: int):
 		for pos in layout2:
 			_spawn_tile(pos, layout2[pos])
 		_spawn_tile(VPOS, 2, ThemeTokens.VIRUS_BG, ThemeTokens.VIRUS_TEXT)
+		_add_virus_dots(VPOS, 2)
 
 		step_label.text = "Virus Tile  •  2 / 2"
-		instruction_label.text = "Clear it in time — include it in a valid rectangle!"
+		instruction_label.text = "Include the Virus in a valid rectangle before it spreads."
 		await get_tree().create_timer(2.0).timeout
 		if gen != _demo_gen: return
 
-		for _i in 4:
-			if gen != _demo_gen: return
-			if _tile_styles.has(VPOS):
-				var tw := create_tween()
-				tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_GLOW, 0.18)
-				tw.tween_property(_tile_styles[VPOS], "bg_color", ThemeTokens.VIRUS_BG,   0.18)
-				await tw.finished
-			await get_tree().create_timer(0.15).timeout
-		if gen != _demo_gen: return
-
-		await get_tree().create_timer(1.5).timeout
-		if gen != _demo_gen: return
-
-		instruction_label.text = "Select it with tiles that make the sum 10."
-		await get_tree().create_timer(1.0).timeout
+		instruction_label.text = "8 + 2 = 10  — select before the dots run out!"
+		await get_tree().create_timer(1.2).timeout
 		if gen != _demo_gen: return
 
 		await _animate_drag(Vector2(0, 1), Vector2(1, 1), 0.85)
 		if gen != _demo_gen: return
 
-		await get_tree().create_timer(1.0).timeout
+		await get_tree().create_timer(0.8).timeout
 		if gen != _demo_gen: return
 
 		selection_box.color = Color(0.306, 0.647, 0.518, 0.40)
