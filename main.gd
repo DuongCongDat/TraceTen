@@ -470,14 +470,14 @@ func evaluate_selection():
 		var points_earned = calculate_points(selected_tiles)
 		score += points_earned
 		update_score_ui()
-		AudioManager.play_sfx("score", 1.0 + (combo_count - 1) * 0.05)
+		AudioManager.play_sfx("score", 1.0 + (min(combo_count, COMBO_MAX) - 1) * 0.05)
 		show_floating_score(points_earned, used_combo)
 
 		# Combo applies to ALL modes using real-time clock
 		var now = Time.get_unix_time_from_system()
 		if last_score_time > 0 and now - last_score_time <= COMBO_TIMEOUT:
-			combo_count = min(combo_count + 1, COMBO_MAX)
-			if combo_count == COMBO_MAX:
+			combo_count += 1          # uncapped — display + max_combo tracking
+			if combo_count >= COMBO_MAX:
 				_combo_x5_streak += 1
 			AudioManager.play_sfx("combo")
 		else:
@@ -2326,7 +2326,7 @@ func calculate_points(sel_tiles: Array) -> int:
 				"MYSTERY":  bonuses += 2
 				"VIRUS":    bonuses += 10
 
-	return (base + bonuses) * combo_count  # combo applies to all modes
+	return (base + bonuses) * min(combo_count, COMBO_MAX)  # multiplier capped at x5
 
 
 func update_combo_ui():
