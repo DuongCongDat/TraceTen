@@ -126,16 +126,16 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 	hero.add_theme_stylebox_override("panel", hero_sb)
 	vbox.add_child(hero)
 
-	# Ghost watermark icon
+	# Ghost watermark icon — PanelContainer forces FULL_RECT on children,
+	# so use text alignment to push the emoji to the top-right corner.
 	var ghost := Label.new()
 	ghost.text = MODE_ICONS[mode_idx]
 	ghost.add_theme_font_size_override("font_size", 84)
 	ghost.modulate = Color(1, 1, 1, 0.22)
-	ghost.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	ghost.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	ghost.position = Vector2(-8, -6)
+	ghost.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	ghost.vertical_alignment   = VERTICAL_ALIGNMENT_TOP
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hero.add_child(ghost)
+	hero.add_child(ghost)  # added before hmc so it renders behind content
 
 	var hmc := MarginContainer.new()
 	hmc.add_theme_constant_override("margin_left",  22)
@@ -219,7 +219,7 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 
 	# ── Top Runs ─────────────────────────────────────────────────────────────
 	var hdr := Label.new()
-	hdr.text = "TOP RUNS · LV + PTS" if is_level else "TOP RUNS"
+	hdr.text = "TOP RUNS"
 	hdr.add_theme_font_override("font", ThemeTokens.font_inter(700))
 	hdr.add_theme_font_size_override("font_size", 18)
 	hdr.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
