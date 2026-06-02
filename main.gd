@@ -787,7 +787,12 @@ func trigger_end_game(reason: String):
 	_update_game_over_ui(reason, score, time_played, max_combo)
 	$GameOverLayer.show()
 
-	Global.submit_score(gameplay_mode, score, time_played, max_combo)
+	var _lv_reached := 0
+	if gameplay_mode == "GRAVITY":
+		_lv_reached = gravity_level
+	elif gameplay_mode == "CHALLENGE":
+		_lv_reached = Global.zen_current_level
+	Global.submit_score(gameplay_mode, score, time_played, max_combo, _lv_reached)
 
 	# ── Achievement: Classic end-game ──
 	if gameplay_mode == "CLASSIC":
@@ -1160,7 +1165,8 @@ func _on_btn_quit_pressed():
 		trigger_end_game("LEFT")
 	else:
 		AudioManager.stop_bgm(1.0)
-		Global.submit_score(gameplay_mode, score, accumulated_time, max_combo)
+		var _lv2 := Global.zen_current_level if gameplay_mode == "CHALLENGE" else 0
+		Global.submit_score(gameplay_mode, score, accumulated_time, max_combo, _lv2)
 		_save_game_state()
 		Engine.time_scale = 1.0
 		get_tree().change_scene_to_file("res://main_menu.tscn")

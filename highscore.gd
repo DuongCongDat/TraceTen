@@ -107,8 +107,12 @@ func _build_ui():
 
 
 func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, mode_idx: int):
-	var accent: Color      = MODE_ACCENTS[mode_idx]
-	var best:   Dictionary = entries[0]
+	var accent:    Color      = MODE_ACCENTS[mode_idx]
+	var best:      Dictionary = entries[0]
+	var mode_key:  String     = MODES[mode_idx]
+	var is_gravity: bool      = mode_key == "GRAVITY"
+	var is_adv:     bool      = mode_key == "CHALLENGE"
+	var is_level:   bool      = is_gravity or is_adv
 
 	# ── Hero card ────────────────────────────────────────────────────────────
 	var hero := PanelContainer.new()
@@ -151,12 +155,31 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 	pb_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	hvbox.add_child(pb_lbl)
 
+	# Main metric: level for Gravity/Adventure, score for others
+	var best_lv: int = int(best.get("level", 0))
+	var main_text: String
+	if is_gravity and best_lv > 0:
+		main_text = "Lv.%d" % best_lv
+	elif is_adv and best_lv > 0:
+		main_text = "%d / 12" % best_lv
+	else:
+		main_text = _fmt_score(best.get("score", 0))
+
 	var score_lbl := Label.new()
-	score_lbl.text = _fmt_score(best.get("score", 0))
+	score_lbl.text = main_text
 	score_lbl.add_theme_font_override("font", ThemeTokens.font_mono(800))
 	score_lbl.add_theme_font_size_override("font_size", 64)
 	score_lbl.add_theme_color_override("font_color", Color.WHITE)
 	hvbox.add_child(score_lbl)
+
+	# Sub line: pts score for level modes
+	if is_level and best_lv > 0:
+		var sub_lbl := Label.new()
+		sub_lbl.text = "%s pts best" % _fmt_score(best.get("score", 0))
+		sub_lbl.add_theme_font_override("font", ThemeTokens.font_mono(600))
+		sub_lbl.add_theme_font_size_override("font_size", 20)
+		sub_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.85))
+		hvbox.add_child(sub_lbl)
 
 	var date_str: String = best.get("date", "")
 	if date_str != "":
@@ -172,15 +195,23 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 	var total_sc: int = int(meta.get("total_score", 0))
 	var avg_sc:   int = total_sc / games if games > 0 else 0
 	var best_cb:  int = best.get("max_combo", 0)
+	var stat_mid_label: String = "BEST PTS" if is_level else "AVG"
+	var stat_mid_value: String
+	if is_level:
+		stat_mid_value = _fmt_score(best.get("score", 0))
+	elif games > 0:
+		stat_mid_value = _fmt_score(avg_sc)
+	else:
+		stat_mid_value = "–"
 
 	var stats_row := HBoxContainer.new()
 	stats_row.add_theme_constant_override("separation", 10)
 	vbox.add_child(stats_row)
 
 	for pair in [
-		["GAMES",   str(games) if games > 0 else "–"],
-		["AVG",     _fmt_score(avg_sc) if games > 0 else "–"],
-		["BEST CB", "×%d" % best_cb],
+		["GAMES",        str(games) if games > 0 else "–"],
+		[stat_mid_label, stat_mid_value],
+		["BEST CB",      "×%d" % best_cb],
 	]:
 		var box := _make_stat_box(pair[0], pair[1])
 		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -188,7 +219,7 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 
 	# ── Top Runs ─────────────────────────────────────────────────────────────
 	var hdr := Label.new()
-	hdr.text = "TOP RUNS"
+	hdr.text = "TOP RUNS · LV + PTS" if is_level else "TOP RUNS"
 	hdr.add_theme_font_override("font", ThemeTokens.font_inter(700))
 	hdr.add_theme_font_size_override("font_size", 18)
 	hdr.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
@@ -216,7 +247,7 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 	rmc.add_child(rvbox)
 
 	for j in entries.size():
-		rvbox.add_child(_make_run_row(j + 1, entries[j], accent))
+		rvbox.add_child(_make_run_row(j + 1, entries[j], accent, is_gravity, is_adv))
 
 	var sp := Control.new()
 	sp.custom_minimum_size.y = 8
@@ -263,7 +294,7 @@ func _make_stat_box(label_text: String, value_text: String) -> PanelContainer:
 	return box
 
 
-func _make_run_row(rank: int, entry: Dictionary, accent: Color) -> PanelContainer:
+func _make_run_row(rank: int, entry: Dictionary, accent: Color, is_gravity: bool = false, is_adv: bool = false) -> PanelContainer:
 	var is_top := rank == 1
 
 	var panel := PanelContainer.new()
@@ -303,15 +334,44 @@ func _make_run_row(rank: int, entry: Dictionary, accent: Color) -> PanelContaine
 	badge.add_child(rank_lbl)
 	hbox.add_child(badge)
 
-	# Score (expand)
+	# Main value area (expand) — level + pts sub for level modes
+	var val_row := HBoxContainer.new()
+	val_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	val_row.add_theme_constant_override("separation", 10)
+	hbox.add_child(val_row)
+
+	var entry_lv: int    = int(entry.get("level", 0))
+	var is_level: bool   = (is_gravity or is_adv) and entry_lv > 0
+	var main_val: String
+	if is_gravity and is_level:
+		main_val = "Lv.%d" % entry_lv
+	elif is_adv and is_level:
+		main_val = "%d/12" % entry_lv
+	else:
+		main_val = _fmt_score(entry.get("score", 0))
+
 	var score_lbl := Label.new()
-	score_lbl.text = _fmt_score(entry.get("score", 0))
-	score_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	score_lbl.vertical_alignment    = VERTICAL_ALIGNMENT_CENTER
+	score_lbl.text = main_val
+	score_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	score_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
 	score_lbl.add_theme_font_size_override("font_size", 26)
 	score_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
-	hbox.add_child(score_lbl)
+	val_row.add_child(score_lbl)
+
+	# Sub pts for level modes
+	if is_level:
+		var sub_lbl := Label.new()
+		sub_lbl.text = _fmt_score(entry.get("score", 0))
+		sub_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		sub_lbl.add_theme_font_override("font", ThemeTokens.font_mono(600))
+		sub_lbl.add_theme_font_size_override("font_size", 19)
+		sub_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+		val_row.add_child(sub_lbl)
+
+	# Spacer between val_row and date
+	var spc := Control.new()
+	spc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	val_row.add_child(spc)
 
 	# Date
 	var date_str: String = entry.get("date", "")

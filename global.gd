@@ -153,7 +153,7 @@ func track_mode_played(mode: String):
 
 # ── HIGHSCORE ──────────────────────────────────────────────
 
-func submit_score(mode: String, score: int, time_played: float, max_combo: int):
+func submit_score(mode: String, score: int, time_played: float, max_combo: int, level_reached: int = 0):
 	var data = load_highscore()
 	if not data.has(mode):
 		data[mode] = []
@@ -168,12 +168,20 @@ func submit_score(mode: String, score: int, time_played: float, max_combo: int):
 	# Short date string e.g. "Jun 2"
 	var d := Time.get_date_dict_from_system()
 	const MONTHS = ["","Jan","Feb","Mar","Apr","May","Jun",
-	                "Jul","Aug","Sep","Oct","Nov","Dec"]
+					"Jul","Aug","Sep","Oct","Nov","Dec"]
 	var date_str := "%s %d" % [MONTHS[int(d["month"])], int(d["day"])]
 
-	var entry = {"score": score, "time": time_played, "max_combo": max_combo, "date": date_str}
+	var entry = {"score": score, "time": time_played, "max_combo": max_combo,
+				 "date": date_str, "level": level_reached}
 	data[mode].append(entry)
-	data[mode].sort_custom(func(a, b): return a["score"] > b["score"])
+	# Sort: level modes by level desc then score desc, others by score desc
+	if mode == "GRAVITY":
+		data[mode].sort_custom(func(a, b):
+			if int(a.get("level", 0)) != int(b.get("level", 0)):
+				return int(a.get("level", 0)) > int(b.get("level", 0))
+			return int(a.get("score", 0)) > int(b.get("score", 0)))
+	else:
+		data[mode].sort_custom(func(a, b): return int(a.get("score", 0)) > int(b.get("score", 0)))
 	if data[mode].size() > HIGHSCORE_TOP:
 		data[mode] = data[mode].slice(0, HIGHSCORE_TOP)
 	save_highscore(data)
