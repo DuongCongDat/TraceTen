@@ -154,7 +154,7 @@ func _ready():
 	var screen_h = get_viewport_rect().size.y
 
 	# Compute tile_size to fit within screen, leaving room for UI top/bottom
-	var ui_top    = 192.0  # 128px top bar + 64px sub-info bar
+	var ui_top    = 220.0  # 128px top bar + 92px sub-info bar
 	var ui_bottom = 170.0  # power-up bar: button + name label + margins
 	var avail_w   = screen_w * 0.90  # 10% horizontal margin (increased from 5%)
 	var avail_h   = screen_h - ui_top - ui_bottom
@@ -254,7 +254,7 @@ func _draw():
 	draw_rect(Rect2(0.0, 0.0, sw, sh), ThemeTokens.APP_BG)
 
 	# Board background — full-width game area so side strips match center
-	draw_rect(Rect2(0.0, 192.0, sw, sh - 192.0 - 170.0), _biome_board_bg)
+	draw_rect(Rect2(0.0, 220.0, sw, sh - 220.0 - 170.0), _biome_board_bg)
 	if tile_size > 0:
 		var pad = tile_size * 0.10
 		var board_pos = Vector2(start_pos.x - tile_size * 0.5 - pad, start_pos.y - tile_size * 0.5 - pad)
@@ -276,8 +276,8 @@ func _draw():
 
 	# UI bars drawn last — cover any board bleed (top HUD and bottom power-up bar)
 	draw_rect(Rect2(0.0, sh - 170.0, sw, 170.0), ThemeTokens.PHONE_BG)
-	draw_rect(Rect2(0.0, 0.0, sw, 192.0), ThemeTokens.PHONE_BG)
-	draw_line(Vector2(0, 192), Vector2(sw, 192), Color(ThemeTokens.BOARD_INSET.r, ThemeTokens.BOARD_INSET.g, ThemeTokens.BOARD_INSET.b, 0.5), 1.0)
+	draw_rect(Rect2(0.0, 0.0, sw, 220.0), ThemeTokens.PHONE_BG)
+	draw_line(Vector2(0, 220), Vector2(sw, 220), Color(ThemeTokens.BOARD_INSET.r, ThemeTokens.BOARD_INSET.g, ThemeTokens.BOARD_INSET.b, 0.5), 1.0)
 
 
 func spawn_grid():
@@ -1795,23 +1795,23 @@ func _setup_hud_visuals():
 	lives_label.add_theme_font_size_override("font_size", 26)
 
 	# Challenge/Zen: 2-line below score, aligned with score column (same x/width)
-	# Adventure: constraint is the key mechanic — give it more space and larger font
+	# Adventure: constraint is the key mechanic — give it the most vertical space
 	var is_adv: bool = gameplay_mode == "CHALLENGE"
-	var line1_h := 22.0 if is_adv else 28.0
-	var line2_h := 28.0 if is_adv else 20.0
+	var line1_h := 20.0 if is_adv else 28.0
+	var line2_h := 50.0 if is_adv else 22.0
 	# Line 1 — level name
 	challenge_level_label.position = Vector2(score_x, sub_y)
 	challenge_level_label.size = Vector2(score_w, line1_h)
 	challenge_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	challenge_level_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	challenge_level_label.add_theme_font_size_override("font_size", 18 if is_adv else 22)
+	challenge_level_label.add_theme_font_size_override("font_size", 16 if is_adv else 22)
 	challenge_level_label.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT if is_adv else ThemeTokens.TEXT)
 	# Line 2 — constraint text
 	challenge_constraint_label.position = Vector2(score_x, sub_y + line1_h + 2.0)
 	challenge_constraint_label.size = Vector2(score_w, line2_h)
 	challenge_constraint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	challenge_constraint_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	challenge_constraint_label.add_theme_font_size_override("font_size", 21 if is_adv else 17)
+	challenge_constraint_label.add_theme_font_size_override("font_size", 26 if is_adv else 17)
 	challenge_constraint_label.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 
 	btn_change_level_hud.visible = gameplay_mode in ["ZEN", "CHALLENGE"]
