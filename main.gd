@@ -1709,21 +1709,23 @@ func _setup_hud_visuals():
 	lives_label.add_theme_font_size_override("font_size", 26)
 
 	# Challenge/Zen: 2-line below score, aligned with score column (same x/width)
-	var line1_h := 28.0
-	var line2_h := 22.0
+	# Adventure: constraint is the key mechanic — give it more space and larger font
+	var is_adv := gameplay_mode == "CHALLENGE"
+	var line1_h := 22.0 if is_adv else 28.0
+	var line2_h := 28.0 if is_adv else 20.0
 	# Line 1 — level name
 	challenge_level_label.position = Vector2(score_x, sub_y)
 	challenge_level_label.size = Vector2(score_w, line1_h)
 	challenge_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	challenge_level_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	challenge_level_label.add_theme_font_size_override("font_size", 22)
-	challenge_level_label.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	challenge_level_label.add_theme_font_size_override("font_size", 18 if is_adv else 22)
+	challenge_level_label.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT if is_adv else ThemeTokens.TEXT)
 	# Line 2 — constraint text
 	challenge_constraint_label.position = Vector2(score_x, sub_y + line1_h + 2.0)
 	challenge_constraint_label.size = Vector2(score_w, line2_h)
 	challenge_constraint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	challenge_constraint_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	challenge_constraint_label.add_theme_font_size_override("font_size", 17)
+	challenge_constraint_label.add_theme_font_size_override("font_size", 21 if is_adv else 17)
 	challenge_constraint_label.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 
 	btn_change_level_hud.visible = gameplay_mode in ["ZEN", "CHALLENGE"]
@@ -1740,9 +1742,8 @@ func _setup_hud_visuals():
 	var btn_size := float(ThemeTokens.POWERUP_BUTTON_SIZE)  # 96
 	var btn_gap  := 32.0
 	var total_btn_w := 3.0 * btn_size + 2.0 * btn_gap
-	var bx   := (sw - total_btn_w) * 0.5
-	var by   := sh - 170.0 + 18.0    # 18px top padding within 170px PU zone
-	var nm_y := by + btn_size + 8.0   # name-label row y
+	var bx := (sw - total_btn_w) * 0.5
+	var by := sh - 170.0 + (170.0 - btn_size) * 0.5  # vertically centered in bar
 
 	$PowerUpContainer.position = Vector2(bx, by)
 	$PowerUpContainer.size = Vector2(total_btn_w, btn_size)
@@ -1752,9 +1753,8 @@ func _setup_hud_visuals():
 	ThemeTokens._set_radius(sb_pu_dis, ThemeTokens.POWERUP_RADIUS)
 	sb_pu_dis.bg_color = Color(0.78, 0.74, 0.66, 0.55)
 
-	var btn_icons  := ["?", "↺", "✕"]
-	var btn_names  := ["HINT", "SHUFFLE", "REMOVE"]
-	var pu_btns    := [$PowerUpContainer/BtnHint, $PowerUpContainer/BtnShuffle, $PowerUpContainer/BtnRemove]
+	var btn_icons := ["?", "↺", "✕"]
+	var pu_btns   := [$PowerUpContainer/BtnHint, $PowerUpContainer/BtnShuffle, $PowerUpContainer/BtnRemove]
 
 	for i in 3:
 		var btn: Button = pu_btns[i]
@@ -1781,17 +1781,6 @@ func _setup_hud_visuals():
 		badge.position = Vector2(bx + i * (btn_size + btn_gap) + btn_size - 36.0, by - 14.0)
 		badge.z_index = 5
 		add_child(badge)
-
-		# Name label (below button)
-		var nm := Label.new()
-		nm.text = btn_names[i]
-		nm.size = Vector2(btn_size, 30.0)
-		nm.position = Vector2(bx + i * (btn_size + btn_gap), nm_y)
-		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		nm.add_theme_font_override("font", ThemeTokens.font_inter(600))
-		nm.add_theme_font_size_override("font_size", 20)
-		nm.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
-		add_child(nm)
 
 		match i:
 			0: _badge_hint    = badge
