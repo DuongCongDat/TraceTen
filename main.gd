@@ -253,9 +253,6 @@ func _draw():
 	# Full-screen base (phủ nền mặc định tối của Godot)
 	draw_rect(Rect2(0.0, 0.0, sw, sh), ThemeTokens.APP_BG)
 
-	# Power-up bar background
-	draw_rect(Rect2(0.0, sh - 170.0, sw, 170.0), ThemeTokens.PHONE_BG)
-
 	# Board background — full-width game area so side strips match center
 	draw_rect(Rect2(0.0, 192.0, sw, sh - 192.0 - 170.0), _biome_board_bg)
 	if tile_size > 0:
@@ -277,7 +274,8 @@ func _draw():
 			draw_rect(sel_rect, Color(ThemeTokens.MINT_SOFT.r, ThemeTokens.MINT_SOFT.g, ThemeTokens.MINT_SOFT.b, 0.25))
 			_draw_dashed_rect(sel_rect, ThemeTokens.MINT, 2.0, 10.0)
 
-	# Top bar + sub-info bar (drawn last to cover any board bleed into UI zone)
+	# UI bars drawn last — cover any board bleed (top HUD and bottom power-up bar)
+	draw_rect(Rect2(0.0, sh - 170.0, sw, 170.0), ThemeTokens.PHONE_BG)
 	draw_rect(Rect2(0.0, 0.0, sw, 192.0), ThemeTokens.PHONE_BG)
 	draw_line(Vector2(0, 192), Vector2(sw, 192), Color(ThemeTokens.BOARD_INSET.r, ThemeTokens.BOARD_INSET.g, ThemeTokens.BOARD_INSET.b, 0.5), 1.0)
 
@@ -2540,7 +2538,8 @@ func _load_game_state():
 	zen_milestone_count = int(data.get("zen_milestone_count", 0))
 	if gameplay_mode in ["ZEN", "CHALLENGE"]:
 		Global.zen_current_level   = int(data.get("current_level", 1))
-		Global.zen_unlocked_levels = data.get("unlocked_levels", [1])
+		var _raw_lv = data.get("unlocked_levels", [1])
+		Global.zen_unlocked_levels = _raw_lv.map(func(x): return int(x))
 		_apply_zen_level_theme()
 
 	for td in data.get("tiles", []):
