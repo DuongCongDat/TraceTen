@@ -2679,6 +2679,7 @@ func _init_debug_ui():
 		{"label": "+10 PU",    "method": "_debug_add_powerups",            "modes": []},
 		{"label": "Reset PU",  "method": "_debug_reset_powerups",          "modes": []},
 		{"label": "Reset ACH", "method": "_debug_reset_achievements",       "modes": []},
+		{"label": "Reset HS",  "method": "_debug_reset_highscore",          "modes": []},
 	]
 
 	for b in button_defs:
@@ -2800,6 +2801,12 @@ func _refresh_apple_directions(animate: bool) -> void:
 func _debug_reset_achievements():
 	Global.reset_achievements()
 	show_floating_text_center("Achievements reset!", Color.ORANGE)
+
+
+func _debug_reset_highscore():
+	if FileAccess.file_exists(Global.HIGHSCORE_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(Global.HIGHSCORE_PATH))
+	show_floating_text_center("Highscore reset!", Color.ORANGE)
 
 
 func show_floating_text_center(msg: String, color: Color = Color.RED):
