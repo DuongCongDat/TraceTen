@@ -26,14 +26,13 @@ func _ready():
 func _apply_theme():
 	$Background.color = ThemeTokens.APP_BG
 
-	# Tighten margins
 	$MarginContainer.add_theme_constant_override("margin_left",   44)
 	$MarginContainer.add_theme_constant_override("margin_right",  44)
 	$MarginContainer.add_theme_constant_override("margin_top",    40)
 	$MarginContainer.add_theme_constant_override("margin_bottom", 56)
 	$MarginContainer/MainLayout.add_theme_constant_override("separation", 20)
 
-	# ── Replace old title + back + separator with top-bar HBox ───────────────
+	# ── Top bar ──────────────────────────────────────────────────────────────
 	var ml = $MarginContainer/MainLayout
 	$MarginContainer/MainLayout/Title.free()
 	$MarginContainer/MainLayout/BtnBack.free()
@@ -44,7 +43,6 @@ func _apply_theme():
 	ml.add_child(top_bar)
 	ml.move_child(top_bar, 0)
 
-	# Back button — same style as mode_select
 	var btn_back := Button.new()
 	btn_back.text = "←"
 	btn_back.custom_minimum_size = Vector2(80, 80)
@@ -68,8 +66,7 @@ func _apply_theme():
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	top_bar.add_child(title)
 
-	# Tab scroll height
-	$MarginContainer/MainLayout/TabScroll.custom_minimum_size = Vector2(0, 48)
+	$MarginContainer/MainLayout/TabScroll.custom_minimum_size = Vector2(0, 52)
 
 
 func _build_ui():
@@ -79,11 +76,12 @@ func _build_ui():
 	content.add_theme_constant_override("separation", 0)
 
 	for i in MODES.size():
+		# Tab pill: icon + name
 		var btn := Button.new()
 		btn.text = MODE_ICONS[i] + "  " + MODE_LABELS[i]
-		btn.custom_minimum_size = Vector2(120, 44)
+		btn.custom_minimum_size = Vector2(130, 48)
 		btn.add_theme_font_override("font", ThemeTokens.font_inter(700))
-		btn.add_theme_font_size_override("font_size", 20)
+		btn.add_theme_font_size_override("font_size", 22)
 		var idx := i
 		btn.pressed.connect(func(): _select_tab(idx))
 		tab_bar.add_child(btn)
@@ -97,11 +95,11 @@ func _build_ui():
 
 		var vbox := VBoxContainer.new()
 		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		vbox.add_theme_constant_override("separation", 14)
+		vbox.add_theme_constant_override("separation", 16)
 		scroll_c.add_child(vbox)
 
-		var entries: Array = data.get(MODES[i], [])
-		var meta: Dictionary = data.get(MODES[i] + "_meta", {})
+		var entries: Array    = data.get(MODES[i], [])
+		var meta:    Dictionary = data.get(MODES[i] + "_meta", {})
 		if entries.is_empty():
 			_make_empty_state(vbox)
 		else:
@@ -112,52 +110,51 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 	var accent: Color      = MODE_ACCENTS[mode_idx]
 	var best:   Dictionary = entries[0]
 
-	# ── Hero card ─────────────────────────────────────────────────────────────
+	# ── Hero card ────────────────────────────────────────────────────────────
 	var hero := PanelContainer.new()
+	hero.clip_contents = true
 	var hero_sb := StyleBoxFlat.new()
 	hero_sb.bg_color     = accent
 	ThemeTokens._set_radius(hero_sb, 20)
 	hero_sb.shadow_color  = Color(accent.r, accent.g, accent.b, 0.5)
-	hero_sb.shadow_size   = 12
+	hero_sb.shadow_size   = 14
 	hero_sb.shadow_offset = Vector2(0, 6)
 	hero.add_theme_stylebox_override("panel", hero_sb)
-	# clip overflow so the ghost icon doesn't spill outside the card
-	hero.clip_contents = true
 	vbox.add_child(hero)
 
+	# Ghost watermark icon
+	var ghost := Label.new()
+	ghost.text = MODE_ICONS[mode_idx]
+	ghost.add_theme_font_size_override("font_size", 84)
+	ghost.modulate = Color(1, 1, 1, 0.22)
+	ghost.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	ghost.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	ghost.position = Vector2(-8, -6)
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero.add_child(ghost)
+
 	var hmc := MarginContainer.new()
-	hmc.add_theme_constant_override("margin_left",  20)
-	hmc.add_theme_constant_override("margin_right", 20)
-	hmc.add_theme_constant_override("margin_top",   18)
-	hmc.add_theme_constant_override("margin_bottom",18)
+	hmc.add_theme_constant_override("margin_left",  22)
+	hmc.add_theme_constant_override("margin_right", 22)
+	hmc.add_theme_constant_override("margin_top",   20)
+	hmc.add_theme_constant_override("margin_bottom",20)
 	hero.add_child(hmc)
 
 	var hvbox := VBoxContainer.new()
 	hvbox.add_theme_constant_override("separation", 6)
 	hmc.add_child(hvbox)
 
-	# Ghost icon top-right (Label with large emoji, low opacity)
-	var ghost_lbl := Label.new()
-	ghost_lbl.text = MODE_ICONS[mode_idx]
-	ghost_lbl.add_theme_font_size_override("font_size", 84)
-	ghost_lbl.modulate = Color(1, 1, 1, 0.22)
-	ghost_lbl.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	ghost_lbl.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	ghost_lbl.position = Vector2(-10, -6)
-	ghost_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hero.add_child(ghost_lbl)  # added directly to hero so it floats
-
 	var pb_lbl := Label.new()
 	pb_lbl.text = "PERSONAL BEST"
 	pb_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700))
-	pb_lbl.add_theme_font_size_override("font_size", 18)
+	pb_lbl.add_theme_font_size_override("font_size", 16)
 	pb_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	hvbox.add_child(pb_lbl)
 
 	var score_lbl := Label.new()
 	score_lbl.text = _fmt_score(best.get("score", 0))
 	score_lbl.add_theme_font_override("font", ThemeTokens.font_mono(800))
-	score_lbl.add_theme_font_size_override("font_size", 56)
+	score_lbl.add_theme_font_size_override("font_size", 64)
 	score_lbl.add_theme_color_override("font_color", Color.WHITE)
 	hvbox.add_child(score_lbl)
 
@@ -170,27 +167,26 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 		date_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 		hvbox.add_child(date_lbl)
 
-	# ── Stats grid (3 boxes) ──────────────────────────────────────────────────
-	var games: int = int(meta.get("games", 0))
+	# ── Stats (3 boxes) ───────────────────────────────────────────────────────
+	var games:    int = int(meta.get("games", 0))
 	var total_sc: int = int(meta.get("total_score", 0))
-	var avg_sc: int = total_sc / games if games > 0 else best.get("score", 0)
-	var best_combo: int = best.get("max_combo", 0)
+	var avg_sc:   int = total_sc / games if games > 0 else 0
+	var best_cb:  int = best.get("max_combo", 0)
 
 	var stats_row := HBoxContainer.new()
 	stats_row.add_theme_constant_override("separation", 10)
 	vbox.add_child(stats_row)
 
-	var gb := _make_stat_box("GAMES",    str(games) if games > 0 else "–")
-	var ab := _make_stat_box("AVG",      _fmt_score(avg_sc) if games > 0 else "–")
-	var cb := _make_stat_box("BEST CB",  "×%d" % best_combo)
-	gb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_row.add_child(gb)
-	stats_row.add_child(ab)
-	stats_row.add_child(cb)
+	for pair in [
+		["GAMES",   str(games) if games > 0 else "–"],
+		["AVG",     _fmt_score(avg_sc) if games > 0 else "–"],
+		["BEST CB", "×%d" % best_cb],
+	]:
+		var box := _make_stat_box(pair[0], pair[1])
+		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		stats_row.add_child(box)
 
-	# ── Top Runs ──────────────────────────────────────────────────────────────
+	# ── Top Runs ─────────────────────────────────────────────────────────────
 	var hdr := Label.new()
 	hdr.text = "TOP RUNS"
 	hdr.add_theme_font_override("font", ThemeTokens.font_inter(700))
@@ -222,9 +218,8 @@ func _make_mode_content(vbox: VBoxContainer, entries: Array, meta: Dictionary, m
 	for j in entries.size():
 		rvbox.add_child(_make_run_row(j + 1, entries[j], accent))
 
-	# bottom spacer
 	var sp := Control.new()
-	sp.custom_minimum_size.y = 12
+	sp.custom_minimum_size.y = 8
 	vbox.add_child(sp)
 
 
@@ -239,21 +234,21 @@ func _make_stat_box(label_text: String, value_text: String) -> PanelContainer:
 	box.add_theme_stylebox_override("panel", sb)
 
 	var mc := MarginContainer.new()
-	mc.add_theme_constant_override("margin_left",  10)
-	mc.add_theme_constant_override("margin_right", 10)
-	mc.add_theme_constant_override("margin_top",   14)
-	mc.add_theme_constant_override("margin_bottom",14)
+	mc.add_theme_constant_override("margin_left",  12)
+	mc.add_theme_constant_override("margin_right", 12)
+	mc.add_theme_constant_override("margin_top",   16)
+	mc.add_theme_constant_override("margin_bottom",16)
 	box.add_child(mc)
 
 	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 6)
+	vb.add_theme_constant_override("separation", 8)
 	mc.add_child(vb)
 
 	var val_lbl := Label.new()
 	val_lbl.text = value_text
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	val_lbl.add_theme_font_size_override("font_size", 26)
+	val_lbl.add_theme_font_size_override("font_size", 30)
 	val_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	vb.add_child(val_lbl)
 
@@ -280,17 +275,17 @@ func _make_run_row(rank: int, entry: Dictionary, accent: Color) -> PanelContaine
 	var mc := MarginContainer.new()
 	mc.add_theme_constant_override("margin_left",  14)
 	mc.add_theme_constant_override("margin_right", 14)
-	mc.add_theme_constant_override("margin_top",   10)
-	mc.add_theme_constant_override("margin_bottom",10)
+	mc.add_theme_constant_override("margin_top",   12)
+	mc.add_theme_constant_override("margin_bottom",12)
 	panel.add_child(mc)
 
 	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 14)
+	hbox.add_theme_constant_override("separation", 16)
 	mc.add_child(hbox)
 
 	# Rank badge
 	var badge := PanelContainer.new()
-	badge.custom_minimum_size = Vector2(26, 26)
+	badge.custom_minimum_size = Vector2(30, 30)
 	badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var badge_sb := StyleBoxFlat.new()
 	badge_sb.bg_color = accent if is_top else ThemeTokens.BOARD_INSET
@@ -303,7 +298,7 @@ func _make_run_row(rank: int, entry: Dictionary, accent: Color) -> PanelContaine
 	rank_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	rank_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
 	rank_lbl.add_theme_font_override("font", ThemeTokens.font_mono(800))
-	rank_lbl.add_theme_font_size_override("font_size", 14)
+	rank_lbl.add_theme_font_size_override("font_size", 16)
 	rank_lbl.add_theme_color_override("font_color", Color.WHITE if is_top else ThemeTokens.SUB_TEXT)
 	badge.add_child(rank_lbl)
 	hbox.add_child(badge)
@@ -314,29 +309,19 @@ func _make_run_row(rank: int, entry: Dictionary, accent: Color) -> PanelContaine
 	score_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	score_lbl.vertical_alignment    = VERTICAL_ALIGNMENT_CENTER
 	score_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	score_lbl.add_theme_font_size_override("font_size", 22)
+	score_lbl.add_theme_font_size_override("font_size", 26)
 	score_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	hbox.add_child(score_lbl)
 
-	# Combo
-	var combo_lbl := Label.new()
-	combo_lbl.text = "×%d" % entry.get("max_combo", 0)
-	combo_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	combo_lbl.add_theme_font_override("font", ThemeTokens.font_mono(600))
-	combo_lbl.add_theme_font_size_override("font_size", 18)
-	combo_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
-	hbox.add_child(combo_lbl)
-
-	# Date (if present)
+	# Date
 	var date_str: String = entry.get("date", "")
-	if date_str != "":
-		var date_lbl := Label.new()
-		date_lbl.text = date_str
-		date_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		date_lbl.add_theme_font_override("font", ThemeTokens.font_inter(500))
-		date_lbl.add_theme_font_size_override("font_size", 16)
-		date_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
-		hbox.add_child(date_lbl)
+	var date_lbl := Label.new()
+	date_lbl.text = date_str if date_str != "" else _fmt_time(entry.get("time", 0))
+	date_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	date_lbl.add_theme_font_override("font", ThemeTokens.font_inter(500))
+	date_lbl.add_theme_font_size_override("font_size", 18)
+	date_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	hbox.add_child(date_lbl)
 
 	return panel
 
@@ -346,7 +331,7 @@ func _make_empty_state(vbox: VBoxContainer):
 	lbl.text = "No scores yet."
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	lbl.custom_minimum_size.y = 140
+	lbl.custom_minimum_size.y = 160
 	lbl.add_theme_font_override("font", ThemeTokens.font_inter(500))
 	lbl.add_theme_font_size_override("font_size", 26)
 	lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
@@ -358,18 +343,21 @@ func _select_tab(idx: int):
 	for i in _content_nodes.size():
 		_content_nodes[i].visible = (i == idx)
 	for i in _tab_buttons.size():
-		var btn: Button = _tab_buttons[i]
-		var sb  := StyleBoxFlat.new()
+		var btn:    Button     = _tab_buttons[i]
+		var accent: Color      = MODE_ACCENTS[i]
+		var sb     := StyleBoxFlat.new()
 		ThemeTokens._set_radius(sb, 999)
 		if i == idx:
-			sb.bg_color = MODE_ACCENTS[i]
+			# Active: solid accent bg, white text
+			sb.bg_color = accent
 			btn.add_theme_color_override("font_color", Color.WHITE)
 		else:
+			# Inactive: white bg + border, text = accent color
 			sb.bg_color = ThemeTokens.CARD_BG
 			sb.border_width_left = 1; sb.border_width_right  = 1
 			sb.border_width_top  = 1; sb.border_width_bottom = 1
 			sb.border_color = ThemeTokens.BOARD_INSET
-			btn.add_theme_color_override("font_color", ThemeTokens.TEXT)
+			btn.add_theme_color_override("font_color", accent)
 		btn.add_theme_stylebox_override("normal",  sb)
 		btn.add_theme_stylebox_override("hover",   sb)
 		btn.add_theme_stylebox_override("pressed", sb)
