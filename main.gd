@@ -660,8 +660,6 @@ func _classic_board_refill():
 		if is_instance_valid(tiles[pos]):
 			tiles[pos].queue_free()
 	tiles.clear()
-	show_floating_text_center("Board Cleared!", Color.GOLD)
-	AudioManager.play_sfx("powerup_gain")
 	spawn_grid()
 
 
