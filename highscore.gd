@@ -358,15 +358,17 @@ func _make_run_row(rank: int, entry: Dictionary, accent: Color, is_gravity: bool
 	score_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	val_row.add_child(score_lbl)
 
-	# Sub pts for level modes
+	# Sub value: pts for level modes, combo for score modes
+	var sub_lbl := Label.new()
+	sub_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	sub_lbl.add_theme_font_override("font", ThemeTokens.font_mono(600))
+	sub_lbl.add_theme_font_size_override("font_size", 19)
+	sub_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	if is_level:
-		var sub_lbl := Label.new()
 		sub_lbl.text = _fmt_score(entry.get("score", 0))
-		sub_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		sub_lbl.add_theme_font_override("font", ThemeTokens.font_mono(600))
-		sub_lbl.add_theme_font_size_override("font_size", 19)
-		sub_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
-		val_row.add_child(sub_lbl)
+	else:
+		sub_lbl.text = "×%d" % entry.get("max_combo", 0)
+	val_row.add_child(sub_lbl)
 
 	# Spacer between val_row and date
 	var spc := Control.new()
