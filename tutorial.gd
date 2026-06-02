@@ -128,7 +128,8 @@ func _apply_theme() -> void:
 
 	# Replay stays at bottom center, lifted a bit
 	var control_bar: HBoxContainer = $DemoLayer/ControlBar
-	control_bar.offset_top = -140.0
+	control_bar.offset_top    = -140.0
+	control_bar.offset_bottom = -60.0
 
 	for state in ["normal", "hover", "pressed", "focus"]:
 		btn_replay.add_theme_stylebox_override(state, ThemeTokens.sb_menu_button())
