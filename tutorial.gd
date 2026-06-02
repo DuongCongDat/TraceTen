@@ -126,7 +126,10 @@ func _apply_theme() -> void:
 	btn_back_demo.add_theme_font_size_override("font_size", 34)
 	btn_back_demo.add_theme_color_override("font_color", ThemeTokens.TEXT)
 
-	# Replay stays at bottom center
+	# Replay stays at bottom center, lifted a bit
+	var control_bar: HBoxContainer = $DemoLayer/ControlBar
+	control_bar.offset_top = -140.0
+
 	for state in ["normal", "hover", "pressed", "focus"]:
 		btn_replay.add_theme_stylebox_override(state, ThemeTokens.sb_menu_button())
 	btn_replay.add_theme_font_override("font", ThemeTokens.font_inter(700))
