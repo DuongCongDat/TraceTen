@@ -172,7 +172,7 @@ func _ready():
 
 	setup_mode_config()
 	$TutorialLayer.hide()
-	AudioManager.play_bgm()
+	AudioManager.play_bgm(gameplay_mode)
 	start_time_attack_game()
 	if Global.load_save and gameplay_mode in ["ZEN", "MUTATION", "CHALLENGE"]:
 		_load_game_state()
@@ -1185,6 +1185,7 @@ func _on_btn_settings_pressed():
 		_build_settings_panel()
 	is_paused = true
 	AudioManager.pause_bgm()
+	pause_menu.hide()
 	_settings_layer.show()
 
 
@@ -1195,26 +1196,41 @@ func _build_settings_panel():
 
 	var dim := ColorRect.new()
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0, 0, 0, 0.90)
+	dim.color = Color(0, 0, 0, 0.82)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	_settings_layer.add_child(dim)
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 60)
-	margin.add_theme_constant_override("margin_top", 80)
-	margin.add_theme_constant_override("margin_right", 60)
+	margin.add_theme_constant_override("margin_left",   60)
+	margin.add_theme_constant_override("margin_top",    80)
+	margin.add_theme_constant_override("margin_right",  60)
 	margin.add_theme_constant_override("margin_bottom", 80)
 	_settings_layer.add_child(margin)
+
+	var card := Panel.new()
+	card.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	card.add_theme_stylebox_override("panel", ThemeTokens.sb_card())
+	margin.add_child(card)
+
+	var inner := MarginContainer.new()
+	inner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	inner.add_theme_constant_override("margin_left",   48)
+	inner.add_theme_constant_override("margin_right",  48)
+	inner.add_theme_constant_override("margin_top",    48)
+	inner.add_theme_constant_override("margin_bottom", 48)
+	card.add_child(inner)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 36)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	margin.add_child(vbox)
+	inner.add_child(vbox)
 
 	var title := Label.new()
 	title.text = "Settings"
+	title.add_theme_font_override("font", ThemeTokens.font_inter(800))
 	title.add_theme_font_size_override("font_size", 46)
+	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
@@ -1223,17 +1239,27 @@ func _build_settings_panel():
 	vbox.add_child(_make_volume_row("SFX", AudioManager.get_sfx_volume(),
 		func(v: float): AudioManager.set_sfx_volume(v)))
 
-	var sep := HSeparator.new()
-	vbox.add_child(sep)
+	vbox.add_child(HSeparator.new())
 
 	var btn_back := Button.new()
-	btn_back.text = "<-- Back"
-	btn_back.custom_minimum_size = Vector2(0, 60)
-	btn_back.add_theme_font_size_override("font_size", 36)
+	btn_back.text = "← Back"
+	btn_back.custom_minimum_size = Vector2(0, 88)
+	btn_back.add_theme_font_override("font", ThemeTokens.font_inter(600))
+	btn_back.add_theme_font_size_override("font_size", 30)
+	btn_back.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	var sb_bb := ThemeTokens.sb_menu_button()
+	btn_back.add_theme_stylebox_override("normal", sb_bb)
+	var sb_bbh := sb_bb.duplicate() as StyleBoxFlat
+	sb_bbh.bg_color = ThemeTokens.BOARD_BG
+	btn_back.add_theme_stylebox_override("hover",   sb_bbh)
+	btn_back.add_theme_stylebox_override("pressed", sb_bbh)
 	btn_back.pressed.connect(func():
 		_settings_layer.hide()
-		is_paused = false
-		AudioManager.resume_bgm()
+		if is_paused:
+			pause_menu.show()
+		else:
+			is_paused = false
+			AudioManager.resume_bgm()
 	)
 	vbox.add_child(btn_back)
 
@@ -1244,7 +1270,9 @@ func _make_volume_row(label_text: String, initial: float, on_change: Callable) -
 
 	var lbl := Label.new()
 	lbl.text = label_text
-	lbl.add_theme_font_size_override("font_size", 32)
+	lbl.add_theme_font_override("font", ThemeTokens.font_inter(600))
+	lbl.add_theme_font_size_override("font_size", 30)
+	lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	lbl.custom_minimum_size = Vector2(110, 0)
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(lbl)
@@ -1260,10 +1288,12 @@ func _make_volume_row(label_text: String, initial: float, on_change: Callable) -
 
 	var pct := Label.new()
 	pct.text = "%d%%" % int(initial * 100)
-	pct.add_theme_font_size_override("font_size", 30)
+	pct.add_theme_font_override("font", ThemeTokens.font_mono(400))
+	pct.add_theme_font_size_override("font_size", 28)
+	pct.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	pct.custom_minimum_size = Vector2(70, 0)
 	pct.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	pct.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	pct.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(pct)
 
 	slider.value_changed.connect(func(v: float):
@@ -2105,13 +2135,18 @@ func _setup_pause_overlay() -> void:
 	btn_vbox.add_theme_constant_override("separation", 18)
 	vbox.add_child(btn_vbox)
 
+	var btn_s := Button.new()
+	btn_s.pressed.connect(_on_btn_settings_pressed)
+
 	_style_overlay_btn_primary(btn_c, "CONTINUE")
 	_style_overlay_btn_secondary(btn_r, "RESTART")
 	_style_overlay_btn_secondary(btn_ch, "CHANGE LEVEL")
+	_style_overlay_btn_secondary(btn_s, "SETTINGS")
 	_style_overlay_btn_ghost(btn_q, "LEAVE")
 	btn_vbox.add_child(btn_c)
 	btn_vbox.add_child(btn_r)
 	btn_vbox.add_child(btn_ch)
+	btn_vbox.add_child(btn_s)
 	btn_vbox.add_child(btn_q)
 
 func _setup_game_over_overlay() -> void:

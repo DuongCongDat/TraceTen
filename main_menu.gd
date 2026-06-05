@@ -4,6 +4,7 @@ var _settings_layer: CanvasLayer = null
 
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	AudioManager.play_bgm("MENU")
 	_apply_theme()
 
 # ─── Navigation ───────────────────────────────────────────────
@@ -203,7 +204,7 @@ func _style_nav_buttons():
 	_style_sec_btn($MarginContainer/MainLayout/Buttons/BtnHighscore,    "HIGHSCORE",    score_str)
 	_style_sec_btn($MarginContainer/MainLayout/Buttons/BtnAchievements, "ACHIEVEMENTS", ach_str)
 	_style_sec_btn($MarginContainer/MainLayout/Buttons/BtnHelp,         "TUTORIAL",     "")
-	_style_sec_btn($MarginContainer/MainLayout/Buttons/BtnQuit,         "QUIT",         "")
+	$MarginContainer/MainLayout/Buttons/BtnQuit.hide()
 
 func _style_sec_btn(btn: Button, label_text: String, sub_text: String):
 	btn.text = label_text
