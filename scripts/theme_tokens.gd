@@ -158,10 +158,10 @@ static func sb_sum_bubble(state: String) -> StyleBoxFlat:
 		"over":  sb.bg_color = Color(0.749, 0.20, 0.20)
 		_:       sb.bg_color = Color(0.38, 0.38, 0.36)
 	_set_radius(sb, BADGE_RADIUS)
-	sb.content_margin_left   = 28.0
-	sb.content_margin_right  = 28.0
-	sb.content_margin_top    = 8.0
-	sb.content_margin_bottom = 8.0
+	sb.content_margin_left   = 14.0
+	sb.content_margin_right  = 14.0
+	sb.content_margin_top    = 5.0
+	sb.content_margin_bottom = 5.0
 	return sb
 
 

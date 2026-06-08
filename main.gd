@@ -28,7 +28,9 @@ var max_combo = 1
 var _selection_sum: int = 0
 var _display_score: int = 0
 var _score_tween: Tween = null
-var _combo_ring = null  # ComboRing node, created in _setup_hud_visuals
+var _combo_ring   = null  # ComboRing node, created in _setup_hud_visuals
+var _life_tiles:  Array = []
+var _prev_lives_count: int = -1
 
 # --- COMBO SYSTEM ---
 var combo_count = 1
@@ -203,7 +205,7 @@ func setup_mode_config():
 			total_duration = 150.0
 			time_bar.hide()
 			time_bar.max_value = total_duration
-			lives_label.show()
+			lives_label.hide()
 			gravity_level_label.show()
 			update_lives_ui()
 			update_gravity_level_ui()
@@ -417,8 +419,9 @@ func update_selection(touch_pos: Vector2):
 	var _sum_state := "exact" if current_sum == 10 else ("over" if current_sum > 10 else "under")
 	sum_label.add_theme_stylebox_override("normal", ThemeTokens.sb_sum_bubble(_sum_state))
 	sum_label.add_theme_color_override("font_color", Color.WHITE)
-	sum_label.size = Vector2(88, 44)
-	sum_label.position = Vector2((selection_box.size.x - 88.0) * 0.5, -54.0)
+	# Font (mono 700, size 26) already set once in _setup_hud_visuals()
+	sum_label.size = Vector2(64.0, 40.0)
+	sum_label.position = Vector2((selection_box.size.x - 64.0) * 0.5, -48.0)
 
 
 # ==========================================
@@ -604,8 +607,6 @@ func _check_zen_level_unlock():
 	var unlock_score = ZenLevelManager.get_unlock_score(next_level)
 	if score >= unlock_score and not (next_level in Global.zen_unlocked_levels):
 		Global.zen_unlocked_levels.append(next_level)
-		var level_name = ZenLevelManager.get_level_name(next_level)
-		show_floating_text_center("L%d %s unlocked!" % [next_level, level_name], Color.GOLD)
 		Global.zen_current_level = next_level
 		_apply_zen_level_theme()
 		_update_challenge_hud()
@@ -1685,13 +1686,85 @@ func _animate_powerup_change(btn: Button, prev: int, curr: int) -> void:
 
 func update_lives_ui():
 	if gameplay_mode != "GRAVITY": return
-	var hearts = ""
-	for i in range(shuffle_count):
-		hearts += "♥"
-	for i in range(3 - shuffle_count):
-		hearts += "♡"
-	lives_label.text = hearts
-	lives_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35, 1.0))
+	if _life_tiles.is_empty(): return
+	var lost_idx := -1
+	if _prev_lives_count > shuffle_count and _prev_lives_count >= 0:
+		lost_idx = shuffle_count
+		_animate_life_lost(lost_idx)
+	_prev_lives_count = shuffle_count
+	for i in range(_life_tiles.size()):
+		if i == lost_idx: continue
+		_life_tiles[i].is_active = i < shuffle_count
+		_life_tiles[i]._drain = 0.0
+		_life_tiles[i].queue_redraw()
+
+
+func _setup_life_tiles(sw: float, sub_y: float, sub_h: float, chip_w: float):
+	const TILE_SZ  := 32.0
+	const TILE_GAP := 5.0
+	var total_w := TILE_SZ * 3.0 + TILE_GAP * 2.0  # 62 px
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", int(TILE_GAP))
+	hbox.position = Vector2(sw - chip_w - 12.0 - total_w - 8.0,
+							sub_y + (sub_h - TILE_SZ) * 0.5)
+	hbox.size = Vector2(total_w, TILE_SZ)
+	add_child(hbox)
+	_life_tiles.clear()
+	for i in range(3):
+		var tile := LifeTile.new()
+		tile.custom_minimum_size = Vector2(TILE_SZ, TILE_SZ)
+		tile.pivot_offset = Vector2(TILE_SZ * 0.5, TILE_SZ * 0.5)
+		tile.is_active = true
+		hbox.add_child(tile)
+		_life_tiles.append(tile)
+
+
+func _animate_life_lost(idx: int):
+	if idx < 0 or idx >= _life_tiles.size(): return
+	var tile: LifeTile = _life_tiles[idx]
+	tile.is_active = true
+	tile._drain = 0.0
+	tile.queue_redraw()
+	var tween := create_tween()
+	# Flash scale up (60 ms)
+	tween.tween_property(tile, "scale", Vector2(1.2, 1.2), 0.06)\
+		.set_ease(Tween.EASE_OUT)
+	# Color drain rose → washed (220 ms)
+	tween.tween_method(func(v: float):
+		tile._drain = v
+		tile.queue_redraw()
+	, 0.0, 1.0, 0.22)
+	# Scale down (120 ms)
+	tween.tween_property(tile, "scale", Vector2(0.82, 0.82), 0.12)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# Settle → dashed empty (100 ms pause)
+	tween.tween_interval(0.1)
+	tween.tween_callback(func():
+		tile.is_active = false
+		tile._drain = 0.0
+		tile.scale = Vector2.ONE
+		tile.queue_redraw()
+	)
+	_spawn_life_particles(tile.global_position + tile.size * 0.5)
+
+
+func _spawn_life_particles(pos: Vector2):
+	var burst := CPUParticles2D.new()
+	burst.position = pos
+	burst.one_shot = true
+	burst.explosiveness = 1.0
+	burst.amount = 5
+	burst.lifetime = 0.3
+	burst.initial_velocity_min = 30.0
+	burst.initial_velocity_max = 80.0
+	burst.spread = 180.0
+	burst.gravity = Vector2(0, 120)
+	burst.scale_amount_min = 3.0
+	burst.scale_amount_max = 6.0
+	burst.color = Color("#d96060")
+	add_child(burst)
+	burst.finished.connect(burst.queue_free)
+	burst.emitting = true
 
 
 func update_gravity_level_ui():
@@ -1838,11 +1911,9 @@ func _setup_hud_visuals():
 	gravity_level_label.add_theme_font_size_override("font_size", 26)
 	gravity_level_label.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
 
-	lives_label.position = Vector2(sw - chip_w - 170.0, sub_y)
-	lives_label.size = Vector2(150.0, sub_h)
-	lives_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	lives_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	lives_label.add_theme_font_size_override("font_size", 26)
+	lives_label.hide()
+	if gameplay_mode == "GRAVITY":
+		_setup_life_tiles(sw, sub_y, sub_h, chip_w)
 
 	# Challenge/Zen: 2-line below score, aligned with score column (same x/width)
 	# Adventure: constraint is the key mechanic — give it the most vertical space
@@ -1869,10 +1940,11 @@ func _setup_hud_visuals():
 	# ── SELECTION BOX ───────────────────────────────────────────────────────
 	selection_box.color = Color(0, 0, 0, 0)
 	var _sum_lbl = selection_box.get_node("SumLabel")
+	_sum_lbl.label_settings = null  # clear .tscn font_size=45 so theme override works
 	_sum_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_sum_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_sum_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
-	_sum_lbl.add_theme_font_size_override("font_size", 36)
+	_sum_lbl.add_theme_font_size_override("font_size", 26)
 
 	# ── POWER-UP BAR (bottom) ───────────────────────────────────────────────
 	var btn_size := float(ThemeTokens.POWERUP_BUTTON_SIZE)  # 96
@@ -2864,12 +2936,7 @@ func show_floating_text_center(msg: String, color: Color = Color.RED):
 func _flash_wrong_tiles() -> void:
 	for pos in selected_tiles:
 		if not tiles.has(pos): continue
-		var t = tiles[pos]
-		var tween = create_tween()
-		tween.tween_property(t, "modulate", Color.RED, 0.07)
-		tween.tween_property(t, "modulate", Color.WHITE, 0.07)
-		tween.tween_property(t, "modulate", Color.RED, 0.07)
-		tween.tween_property(t, "modulate", Color.WHITE, 0.07)
+		tiles[pos].flash_wrong()
 
 
 func _spawn_tile_burst(pos: Vector2, tile_type: String) -> void:

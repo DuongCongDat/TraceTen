@@ -57,3 +57,10 @@ func deselect():
 	var tw = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_bg, "scale", Vector2(1.0, 1.0), 0.08)
 	update_visuals()
+
+func flash_wrong():
+	var tween = create_tween()
+	tween.tween_property(self, "modulate", Color.RED, 0.07)
+	tween.tween_property(self, "modulate", Color.WHITE, 0.07)
+	tween.tween_property(self, "modulate", Color.RED, 0.07)
+	tween.tween_property(self, "modulate", Color.WHITE, 0.07)
