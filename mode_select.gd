@@ -184,7 +184,7 @@ func _insert_heading():
 
 func _build_mode_cards():
 	var modes_vbox := $MarginContainer/MainLayout/Modes
-	modes_vbox.add_theme_constant_override("separation", 16)
+	modes_vbox.add_theme_constant_override("separation", 10)
 
 	for child in modes_vbox.get_children():
 		child.queue_free()
@@ -201,14 +201,117 @@ func _build_mode_cards():
 
 	for m in modes:
 		var best := _get_best_str(hs, m.key)
-		var card := _build_hero_card(m.name, m.tag, m.accent, m.chip_bg, m.icon, m.cb, best)
-		modes_vbox.add_child(card)
+		var row := _build_list_row(m.name, m.tag, m.accent, m.chip_bg, m.icon, m.cb, best)
+		modes_vbox.add_child(row)
 
 func _get_best_str(hs: Dictionary, mode: String) -> String:
 	var entries: Array = hs.get(mode, [])
 	if entries.is_empty(): return ""
 	var score := int(entries[0].get("score", 0))
 	return "%d" % score if score > 0 else ""
+
+func _build_list_row(
+		mode_name: String, tag: String,
+		accent: Color, chip_bg: Color,
+		icon: String, on_press: Callable,
+		best_str: String
+) -> PanelContainer:
+	var card := PanelContainer.new()
+	var sb_card := ThemeTokens.sb_card()
+	# Remove heavy shadow for dense rows
+	sb_card.shadow_size = 6; sb_card.shadow_offset = Vector2(0, 2)
+	card.add_theme_stylebox_override("panel", sb_card)
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+	var mc := MarginContainer.new()
+	mc.add_theme_constant_override("margin_left",   20)
+	mc.add_theme_constant_override("margin_right",  20)
+	mc.add_theme_constant_override("margin_top",    16)
+	mc.add_theme_constant_override("margin_bottom", 16)
+	card.add_child(mc)
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 18)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	mc.add_child(hbox)
+
+	# Mode icon chip — 64×64
+	var icon_panel := Panel.new()
+	icon_panel.custom_minimum_size = Vector2(64, 64)
+	icon_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb_icon := StyleBoxFlat.new()
+	sb_icon.bg_color = chip_bg
+	ThemeTokens._set_radius(sb_icon, 18)
+	icon_panel.add_theme_stylebox_override("panel", sb_icon)
+
+	var icon_lbl := Label.new()
+	icon_lbl.text = icon
+	icon_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 30)
+	icon_panel.add_child(icon_lbl)
+	hbox.add_child(icon_panel)
+
+	# Name + tag column
+	var text_vb := VBoxContainer.new()
+	text_vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	text_vb.add_theme_constant_override("separation", 3)
+
+	var name_lbl := Label.new()
+	name_lbl.text = mode_name
+	name_lbl.add_theme_font_override("font", ThemeTokens.font_inter(800))
+	name_lbl.add_theme_font_size_override("font_size", 28)
+	name_lbl.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	name_lbl.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
+	name_lbl.add_theme_constant_override("outline_size", 2)
+	text_vb.add_child(name_lbl)
+
+	var tag_lbl := Label.new()
+	tag_lbl.text = tag
+	tag_lbl.add_theme_font_override("font", ThemeTokens.font_inter(400))
+	tag_lbl.add_theme_font_size_override("font_size", 18)
+	tag_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	text_vb.add_child(tag_lbl)
+	hbox.add_child(text_vb)
+
+	# Best score pill — PanelContainer auto-sizes to label content
+	if best_str != "":
+		var best_pill := PanelContainer.new()
+		best_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var sb_pill := StyleBoxFlat.new()
+		sb_pill.bg_color = Color(accent.r, accent.g, accent.b, 0.14)
+		ThemeTokens._set_radius(sb_pill, 999)
+		sb_pill.content_margin_left = 12; sb_pill.content_margin_right = 12
+		sb_pill.content_margin_top = 5;  sb_pill.content_margin_bottom = 5
+		best_pill.add_theme_stylebox_override("panel", sb_pill)
+		var best_lbl := Label.new()
+		best_lbl.text = best_str
+		best_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
+		best_lbl.add_theme_font_size_override("font_size", 18)
+		best_lbl.add_theme_color_override("font_color", accent)
+		best_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		best_pill.add_child(best_lbl)
+		hbox.add_child(best_pill)
+
+	# Chevron
+	var chevron := Label.new()
+	chevron.text = "›"
+	chevron.add_theme_font_size_override("font_size", 52)
+	chevron.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	chevron.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hbox.add_child(chevron)
+
+	card.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton \
+				and event.button_index == MOUSE_BUTTON_LEFT \
+				and event.pressed:
+			on_press.call()
+	)
+	return card
+
 
 func _build_hero_card(
 		mode_name: String, tag: String,
