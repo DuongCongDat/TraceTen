@@ -89,14 +89,14 @@ func _apply_theme():
 	$MarginContainer/MainLayout/Title.hide()
 
 	# Spacer ratio controls how far down the logo sits — lower = higher up
-	$MarginContainer/MainLayout/Spacer.size_flags_stretch_ratio = 1.0
+	$MarginContainer/MainLayout/Spacer.size_flags_stretch_ratio = 0.4
 
 	var logo := _build_logo_block()
 	layout.add_child(logo)
 	layout.move_child(logo, 2)  # Title[0], Spacer[1], Logo[2], Buttons[3]
 
 	var mid_gap := Control.new()
-	mid_gap.custom_minimum_size = Vector2(0, 52)
+	mid_gap.custom_minimum_size = Vector2(0, 88)
 	layout.add_child(mid_gap)
 	layout.move_child(mid_gap, 3)  # Logo[2], MidGap[3], Buttons[4]
 
