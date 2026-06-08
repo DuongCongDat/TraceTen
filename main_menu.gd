@@ -88,8 +88,8 @@ func _apply_theme():
 
 	$MarginContainer/MainLayout/Title.hide()
 
-	# Existing Spacer takes 2× free space → pushes logo+buttons group down
-	$MarginContainer/MainLayout/Spacer.size_flags_stretch_ratio = 2.0
+	# Spacer ratio controls how far down the logo sits — lower = higher up
+	$MarginContainer/MainLayout/Spacer.size_flags_stretch_ratio = 1.0
 
 	var logo := _build_logo_block()
 	layout.add_child(logo)
@@ -128,17 +128,17 @@ func _build_logo_block() -> VBoxContainer:
 	var lbl_trace := Label.new()
 	lbl_trace.text = "trace"
 	lbl_trace.add_theme_font_override("font", _inter(800))
-	lbl_trace.add_theme_font_size_override("font_size", 76)
+	lbl_trace.add_theme_font_size_override("font_size", 91)
 	lbl_trace.add_theme_color_override("font_color", ThemeTokens.TEXT)
 	lbl_trace.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(lbl_trace)
 
 	var tile := Panel.new()
-	tile.custom_minimum_size = Vector2(104, 104)
+	tile.custom_minimum_size = Vector2(125, 125)
 	var sb_tile := StyleBoxFlat.new()
 	sb_tile.bg_color = ThemeTokens.MINT
-	ThemeTokens._set_radius(sb_tile, 22)
-	sb_tile.border_width_bottom = 8
+	ThemeTokens._set_radius(sb_tile, 26)
+	sb_tile.border_width_bottom = 10
 	sb_tile.border_color = ThemeTokens.MINT_DARK
 	tile.add_theme_stylebox_override("panel", sb_tile)
 
@@ -148,7 +148,7 @@ func _build_logo_block() -> VBoxContainer:
 	lbl_10.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_10.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl_10.add_theme_font_override("font", ThemeTokens.font_mono(800))
-	lbl_10.add_theme_font_size_override("font_size", 48)
+	lbl_10.add_theme_font_size_override("font_size", 58)
 	lbl_10.add_theme_color_override("font_color", Color.WHITE)
 	tile.add_child(lbl_10)
 	row.add_child(tile)
