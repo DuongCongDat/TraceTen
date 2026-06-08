@@ -95,20 +95,17 @@ func _apply_theme():
 	layout.add_child(logo)
 	layout.move_child(logo, 2)  # Title[0], Spacer[1], Logo[2], Buttons[3]
 
+	# MidGap expands to fill free space → pushes buttons to bottom
 	var mid_gap := Control.new()
-	mid_gap.custom_minimum_size = Vector2(0, 88)
+	mid_gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	mid_gap.size_flags_stretch_ratio = 1.0
 	layout.add_child(mid_gap)
 	layout.move_child(mid_gap, 3)  # Logo[2], MidGap[3], Buttons[4]
 
 	_style_nav_buttons()
 	$MarginContainer/MainLayout/Buttons/BtnSettings.hide()
 
-	# Small spacer below Buttons (1× = 1/3 of free space)
-	var spacer2 := Control.new()
-	spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	spacer2.size_flags_stretch_ratio = 1.0
-	layout.add_child(spacer2)
-
+	# No spacer2 — buttons sit ~16px above ver (MainLayout separation)
 	var ver := _build_version_label()
 	layout.add_child(ver)
 
