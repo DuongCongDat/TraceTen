@@ -216,6 +216,10 @@ func _style_nav_buttons():
 	$MarginContainer/MainLayout/Buttons/BtnQuit.hide()
 
 	# ── Icon row: SCORES / AWARDS / HOW TO ───────────────────────
+	var icon_gap := Control.new()
+	icon_gap.custom_minimum_size = Vector2(0, 12)
+	btns.add_child(icon_gap)
+
 	var ach_count := "%d/25" % Global.count_unlocked()
 	var icon_row := HBoxContainer.new()
 	icon_row.add_theme_constant_override("separation", 0)
