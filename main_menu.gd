@@ -250,7 +250,7 @@ func _style_nav_buttons():
 		"res://assets/ui/icons/icon_score.png",  "SCORES",  Color("c8923a"), "",
 		func(): get_tree().change_scene_to_file("res://highscore.tscn")))
 	icon_row.add_child(_make_nav_icon_tile(
-		"res://assets/ui/icons/icon_awards.png", "AWARDS",  Color("4ea584"), ach_count,
+		"res://assets/ui/icons/icon_awards.png", "ACHIEVEMENTS",  Color("4ea584"), ach_count,
 		func(): get_tree().change_scene_to_file("res://achievement_screen.tscn")))
 	icon_row.add_child(_make_nav_icon_tile(
 		"res://assets/ui/icons/icon_howto.png",  "HOW TO",  Color("4a78c8"), "",
