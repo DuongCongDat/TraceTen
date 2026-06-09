@@ -48,7 +48,7 @@ var gravity_level = 1
 var gravity_l4_dir = "DOWN"
 const GRAVITY_LEVEL_SCORE = 50  # score needed to advance each level
 const GRAVITY_TIME_PER_TILE = 1.0  # +seconds per tile eaten in Gravity mode
-const VIRUS_SPREAD_PENALTY = 10
+const VIRUS_SPREAD_PENALTY = 1
 
 # --- DEBUG ---
 const DEBUG_MODE = true

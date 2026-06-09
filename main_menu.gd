@@ -73,7 +73,7 @@ func _mono(weight: int, spacing: int = 0) -> FontVariation:
 # ─── Theme ────────────────────────────────────────────────────
 
 func _apply_theme():
-	$Background.color = ThemeTokens.APP_BG
+	$Background.color = ThemeTokens.PHONE_BG
 
 	_add_floating_bg()
 
@@ -88,24 +88,33 @@ func _apply_theme():
 
 	$MarginContainer/MainLayout/Title.hide()
 
-	# Spacer ratio controls how far down the logo sits — lower = higher up
-	$MarginContainer/MainLayout/Spacer.size_flags_stretch_ratio = 0.4
+	# Spacer fixed → logo position locked regardless of MidGap
+	var spacer := $MarginContainer/MainLayout/Spacer
+	spacer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	spacer.custom_minimum_size = Vector2(0, 150)
 
 	var logo := _build_logo_block()
 	layout.add_child(logo)
 	layout.move_child(logo, 2)  # Title[0], Spacer[1], Logo[2], Buttons[3]
 
-	# MidGap expands to fill free space → pushes buttons to bottom
+	# MidGap: đổi số này để di chuyển khối buttons lên/xuống
 	var mid_gap := Control.new()
 	mid_gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	mid_gap.size_flags_stretch_ratio = 1.0
+	mid_gap.size_flags_stretch_ratio = 2
 	layout.add_child(mid_gap)
 	layout.move_child(mid_gap, 3)  # Logo[2], MidGap[3], Buttons[4]
 
 	_style_nav_buttons()
 	$MarginContainer/MainLayout/Buttons/BtnSettings.hide()
 
-	# No spacer2 — buttons sit ~16px above ver (MainLayout separation)
+	# spacer2: đổi stretch_ratio để di chuyển khối buttons lên/xuống
+	# mid_gap(trên) vs spacer2(dưới) tranh nhau space
+	# spacer2 lớn hơn = buttons lên cao; mid_gap lớn hơn = buttons xuống thấp
+	var spacer2 := Control.new()
+	spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	spacer2.size_flags_stretch_ratio = 1.0
+	layout.add_child(spacer2)
+
 	var ver := _build_version_label()
 	layout.add_child(ver)
 
@@ -127,6 +136,8 @@ func _build_logo_block() -> VBoxContainer:
 	lbl_trace.add_theme_font_override("font", _inter(800))
 	lbl_trace.add_theme_font_size_override("font_size", 91)
 	lbl_trace.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	lbl_trace.add_theme_color_override("font_outline_color", ThemeTokens.TEXT)
+	lbl_trace.add_theme_constant_override("outline_size", 2)
 	lbl_trace.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(lbl_trace)
 
@@ -147,6 +158,8 @@ func _build_logo_block() -> VBoxContainer:
 	lbl_10.add_theme_font_override("font", ThemeTokens.font_mono(800))
 	lbl_10.add_theme_font_size_override("font_size", 58)
 	lbl_10.add_theme_color_override("font_color", Color.WHITE)
+	lbl_10.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.18))
+	lbl_10.add_theme_constant_override("outline_size", 2)
 	tile.add_child(lbl_10)
 	row.add_child(tile)
 
@@ -204,6 +217,19 @@ func _style_nav_buttons():
 	btns.add_child(btn_modes)
 	btns.move_child(btn_modes, 1)
 	_style_sec_btn(btn_modes, "MODES", "")
+	var sb_modes := StyleBoxFlat.new()
+	sb_modes.bg_color = ThemeTokens.CARD_BG
+	ThemeTokens._set_radius(sb_modes, ThemeTokens.CHIP_RADIUS)
+	sb_modes.border_width_left   = 1
+	sb_modes.border_width_right  = 1
+	sb_modes.border_width_top    = 1
+	sb_modes.border_width_bottom = 3
+	sb_modes.border_color = ThemeTokens.BOARD_INSET
+	btn_modes.add_theme_stylebox_override("normal", sb_modes)
+	var sb_modes_h := sb_modes.duplicate() as StyleBoxFlat
+	sb_modes_h.bg_color = ThemeTokens.BOARD_BG
+	btn_modes.add_theme_stylebox_override("hover",   sb_modes_h)
+	btn_modes.add_theme_stylebox_override("pressed", sb_modes_h)
 	btn_modes.pressed.connect(func(): get_tree().change_scene_to_file("res://mode_select.tscn"))
 
 	# ── Hide old secondary buttons ───────────────────────────────
@@ -289,6 +315,8 @@ func _add_mode_chip(btn: Button, chip_text: String):
 	lbl.add_theme_font_override("font", _inter(800, 4))
 	lbl.add_theme_font_size_override("font_size", 18)
 	lbl.add_theme_color_override("font_color", ThemeTokens.MINT_DARK)
+	lbl.add_theme_color_override("font_outline_color", ThemeTokens.MINT_DARK)
+	lbl.add_theme_constant_override("outline_size", 2)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chip.add_child(lbl)
 
@@ -618,15 +646,20 @@ func _make_nav_icon_tile(
 
 	# Icon chip (tap target)
 	var chip := Button.new()
-	chip.custom_minimum_size = Vector2(80, 80)
+	chip.custom_minimum_size = Vector2(180, 112)
 	chip.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	chip.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	var sb_chip := StyleBoxFlat.new()
-	sb_chip.bg_color = Color(accent.r, accent.g, accent.b, 0.14)
-	ThemeTokens._set_radius(sb_chip, 20)
+	sb_chip.bg_color = ThemeTokens.CARD_BG
+	ThemeTokens._set_radius(sb_chip, ThemeTokens.CHIP_RADIUS)
+	sb_chip.border_width_left   = 1
+	sb_chip.border_width_right  = 1
+	sb_chip.border_width_top    = 1
+	sb_chip.border_width_bottom = 3
+	sb_chip.border_color = ThemeTokens.BOARD_INSET
 	chip.add_theme_stylebox_override("normal", sb_chip)
 	var sb_ch := sb_chip.duplicate() as StyleBoxFlat
-	sb_ch.bg_color = Color(accent.r, accent.g, accent.b, 0.26)
+	sb_ch.bg_color = ThemeTokens.BOARD_BG
 	chip.add_theme_stylebox_override("hover", sb_ch)
 	chip.add_theme_stylebox_override("pressed", sb_ch)
 	chip.pressed.connect(on_press)
@@ -638,7 +671,7 @@ func _make_nav_icon_tile(
 	tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	tex.offset_left = 16; tex.offset_right  = -16
-	tex.offset_top  = 16; tex.offset_bottom = -16
+	tex.offset_top  = 12; tex.offset_bottom = -12
 	tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mat := ShaderMaterial.new()
 	mat.shader = _get_tint_shader()
@@ -649,34 +682,51 @@ func _make_nav_icon_tile(
 	# Badge (achievement count etc.) — Panel bg + Label text
 	if badge_text != "":
 		var badge_bg := Panel.new()
+		# top: -6px; right: -4px — ôm sát góc trên-phải chip
 		badge_bg.anchor_left = 1.0; badge_bg.anchor_right  = 1.0
 		badge_bg.anchor_top  = 0.0; badge_bg.anchor_bottom = 0.0
-		badge_bg.offset_left = -36; badge_bg.offset_right  = 6
-		badge_bg.offset_top  = -6;  badge_bg.offset_bottom = 18
+		badge_bg.offset_right  =  4   # right: -4px (4px ló ra ngoài)
+		badge_bg.offset_top    = -15
+		badge_bg.offset_left   = -62  # width = 66px
+		badge_bg.offset_bottom =  15
 		badge_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var sb_b := StyleBoxFlat.new()
 		sb_b.bg_color = ThemeTokens.MINT_DARK
 		ThemeTokens._set_radius(sb_b, 999)
+		sb_b.content_margin_left   = 6.0
+		sb_b.content_margin_right  = 6.0
+		sb_b.content_margin_top    = 3.0
+		sb_b.content_margin_bottom = 3.0
+		sb_b.shadow_color  = Color(ThemeTokens.MINT_DARK.r, ThemeTokens.MINT_DARK.g, ThemeTokens.MINT_DARK.b, 0.45)
+		sb_b.shadow_size   = 3
+		sb_b.shadow_offset = Vector2(0, 2)
 		badge_bg.add_theme_stylebox_override("panel", sb_b)
 		var badge_lbl := Label.new()
 		badge_lbl.text = badge_text
 		badge_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		badge_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-		badge_lbl.add_theme_font_override("font", ThemeTokens.font_inter(700))
-		badge_lbl.add_theme_font_size_override("font_size", 12)
+		badge_lbl.add_theme_font_override("font", ThemeTokens.font_mono(700))
+		badge_lbl.add_theme_font_size_override("font_size", 14)
 		badge_lbl.add_theme_color_override("font_color", Color.WHITE)
+		badge_lbl.add_theme_color_override("font_outline_color", Color.WHITE)
+		badge_lbl.add_theme_constant_override("outline_size", 2)
+		badge_lbl.add_theme_constant_override("line_spacing", 0)
+		badge_lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 		badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		badge_bg.add_child(badge_lbl)
+		chip.clip_contents = false
 		chip.add_child(badge_bg)
 
 	# Text label
 	var lbl := Label.new()
 	lbl.text = label_text
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_override("font", _inter(600, 3))
-	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_font_override("font", _inter(700, 3))
+	lbl.add_theme_font_size_override("font_size", 17)
 	lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+	lbl.add_theme_color_override("font_outline_color", ThemeTokens.SUB_TEXT)
+	lbl.add_theme_constant_override("outline_size", 2)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vb.add_child(chip)
 	vb.add_child(lbl)
