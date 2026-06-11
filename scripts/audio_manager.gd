@@ -61,7 +61,7 @@ func _ready() -> void:
 
 
 func play_bgm(mode: String, fade_in: float = 1.5) -> void:
-	if _current_mode == mode and _bgm_player.playing:
+	if _current_mode == mode and _bgm_player.playing and not _bgm_player.stream_paused:
 		return
 
 	_current_mode = mode

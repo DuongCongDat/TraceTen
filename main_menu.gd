@@ -253,7 +253,7 @@ func _style_nav_buttons():
 		"res://assets/ui/icons/icon_awards.png", "ACHIEVEMENTS",  Color("4ea584"), ach_count,
 		func(): get_tree().change_scene_to_file("res://achievement_screen.tscn")))
 	icon_row.add_child(_make_nav_icon_tile(
-		"res://assets/ui/icons/icon_howto.png",  "HOW TO",  Color("4a78c8"), "",
+		"res://assets/ui/icons/icon_howto.png",  "ABOUT",  Color("4a78c8"), "",
 		func(): get_tree().change_scene_to_file("res://tutorial.tscn")))
 	btns.add_child(icon_row)
 

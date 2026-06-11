@@ -43,12 +43,65 @@ const TUTORIALS = [
 		"icon": "−",
 		"accent": Color(0.769, 0.416, 0.416),   # NEG_DARK
 	},
+	{
+		"id": "credits",
+		"name": "Music Credits",
+		"tag": "CREDITS",
+		"desc": "BGM from opengameart.org  ·  SFX: jsfxr  ·  Godot 4",
+		"icon": "♪",
+		"accent": Color(0.40, 0.47, 0.55),
+	},
 ]
+
+const CREDITS_TEXT := \
+"""\
+MUSIC — opengameart.org
+
+"Acrostics" — Cityfires
+  CC-BY 3.0  ·  Main Menu
+
+"Magic Crystal" — congusbongus
+  CC-BY 4.0  ·  Classic
+
+"Samurai Nights" — Majadroid
+  CC-BY 3.0  ·  Gravity
+
+"Mysterious Ambience" — cynicmusic
+  CC0  ·  Mutation
+
+"Pushing Ahead" — Centurion_of_war
+  CC-BY 4.0  ·  Zen / Adventure
+
+"Sippy Pop" — congusbongus
+  CC-BY 4.0  ·  Zen / Adventure
+
+"Breakfast Blend" — Dan Knoflicek
+  CC-BY 4.0  ·  Zen / Adventure
+
+"World Map" — Scott Elliott
+  CC-BY 4.0  ·  Zen / Adventure
+
+"Decision" — Alexandr Zhelanov
+  CC-BY 3.0  ·  Zen / Adventure
+
+"Space Captain Yanya" — spring spring
+  CC-BY 4.0  ·  Zen / Adventure
+
+"Desert Zone" — Connor Walker
+  CC-BY 4.0  ·  Zen / Adventure
+
+"No More Magic" — HorrorPen
+  CC-BY 3.0  ·  Zen / Adventure
+
+────────────────────
+SFX: jsfxr  ·  sfxr.me
+Engine: Godot 4  ·  godotengine.org"""
 
 const TILE_SIZE := 100.0
 
-var _current_id   := ""
-var _demo_gen     := 0
+var _current_id    := ""
+var _demo_gen      := 0
+var _credits_layer: CanvasLayer = null
 
 var _tile_rects:      Dictionary = {}   # Vector2 → Panel
 var _tile_labels:     Dictionary = {}   # Vector2 → Label
@@ -87,7 +140,7 @@ func _apply_theme() -> void:
 	btn_back.add_theme_color_override("font_color", ThemeTokens.TEXT)
 
 	var page_title: Label = $ListLayer/MarginContainer/MainLayout/TopBar/PageTitle
-	page_title.text = "HOW TO PLAY"
+	page_title.text = "ABOUT"
 	page_title.add_theme_font_override("font", ThemeTokens.font_inter(800))
 	page_title.add_theme_font_size_override("font_size", 34)
 	page_title.add_theme_color_override("font_color", ThemeTokens.TEXT)
@@ -243,21 +296,27 @@ func _make_card(t: Dictionary) -> Control:
 	desc_lbl.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
 	vbox.add_child(desc_lbl)
 
-	# ── Chevron ──
-	var arrow := Label.new()
-	arrow.text = "›"
-	arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	arrow.add_theme_font_override("font", ThemeTokens.font_inter(400))
-	arrow.add_theme_font_size_override("font_size", 36)
-	arrow.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
-	hbox.add_child(arrow)
+	if t.id == "credits":
+		panel.gui_input.connect(func(ev: InputEvent):
+			if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
+				_show_credits_panel()
+		)
+	else:
+		# ── Chevron ──
+		var arrow := Label.new()
+		arrow.text = "›"
+		arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		arrow.add_theme_font_override("font", ThemeTokens.font_inter(400))
+		arrow.add_theme_font_size_override("font_size", 36)
+		arrow.add_theme_color_override("font_color", ThemeTokens.SUB_TEXT)
+		hbox.add_child(arrow)
 
-	var tid: String = t.id
-	panel.gui_input.connect(func(ev: InputEvent):
-		if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
-			_load_demo(tid)
-	)
+		var tid: String = t.id
+		panel.gui_input.connect(func(ev: InputEvent):
+			if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
+				_load_demo(tid)
+		)
 	return panel
 
 
@@ -955,3 +1014,86 @@ func _run_joker(gen: int):
 		cursor_dot.hide()
 		selection_box.hide()
 		await get_tree().create_timer(2.5).timeout
+
+
+# ══════════════════════════════════════════════
+# CREDITS PANEL
+# ══════════════════════════════════════════════
+
+func _show_credits_panel() -> void:
+	if _credits_layer == null:
+		_build_credits_panel()
+	_credits_layer.show()
+
+
+func _build_credits_panel() -> void:
+	_credits_layer = CanvasLayer.new()
+	_credits_layer.layer = 5
+	add_child(_credits_layer)
+
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = ThemeTokens.APP_BG
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	_credits_layer.add_child(bg)
+
+	var root_margin := MarginContainer.new()
+	root_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root_margin.add_theme_constant_override("margin_left",   32)
+	root_margin.add_theme_constant_override("margin_right",  32)
+	root_margin.add_theme_constant_override("margin_top",    44)
+	root_margin.add_theme_constant_override("margin_bottom", 44)
+	_credits_layer.add_child(root_margin)
+
+	var vroot := VBoxContainer.new()
+	vroot.add_theme_constant_override("separation", 0)
+	root_margin.add_child(vroot)
+
+	# ── Top bar ──
+	var top_bar := HBoxContainer.new()
+	top_bar.add_theme_constant_override("separation", 16)
+	vroot.add_child(top_bar)
+
+	var btn_back := Button.new()
+	btn_back.text = "←"
+	btn_back.custom_minimum_size = Vector2(ThemeTokens.MENU_BUTTON_SIZE, ThemeTokens.MENU_BUTTON_SIZE)
+	for state in ["normal", "hover", "pressed", "focus"]:
+		btn_back.add_theme_stylebox_override(state, ThemeTokens.sb_menu_button())
+	btn_back.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	btn_back.add_theme_font_size_override("font_size", 34)
+	btn_back.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	btn_back.pressed.connect(func(): _credits_layer.hide())
+	top_bar.add_child(btn_back)
+
+	var title := Label.new()
+	title.text = "CREDITS"
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	title.add_theme_font_override("font", ThemeTokens.font_mono(700))
+	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	top_bar.add_child(title)
+
+	var sep := HSeparator.new()
+	sep.add_theme_color_override("color", ThemeTokens.BOARD_INSET)
+	sep.add_theme_constant_override("separation", 0)
+	vroot.add_child(sep)
+
+	var spacer_top := Control.new()
+	spacer_top.custom_minimum_size = Vector2(0, 16)
+	vroot.add_child(spacer_top)
+
+	# ── Scrollable content ──
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vroot.add_child(scroll)
+
+	var content := Label.new()
+	content.text = CREDITS_TEXT
+	content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_theme_font_override("font", ThemeTokens.font_mono(400))
+	content.add_theme_font_size_override("font_size", 20)
+	content.add_theme_color_override("font_color", ThemeTokens.TEXT)
+	content.add_theme_constant_override("line_spacing", 4)
+	scroll.add_child(content)
