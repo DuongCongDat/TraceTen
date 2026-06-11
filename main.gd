@@ -56,6 +56,8 @@ const DEBUG_MODE = true
 # --- ZEN MILESTONE REFILL ---
 var zen_milestone_count = 0
 const ZEN_REFILL_MILESTONE = 100
+var _last_submitted_score: int = 0
+var _session_id: String = ""
 
 var current_mode = "RECTANGLE"
 
@@ -191,7 +193,9 @@ func setup_mode_config():
 	max_combo    = 1
 	gravity_level      = 1
 	gravity_l4_dir     = "DOWN"
-	zen_milestone_count = 0
+	zen_milestone_count   = 0
+	_last_submitted_score = 0
+	_session_id           = str(int(Time.get_unix_time_from_system()))
 	Global.hints_used_this_game = 0
 	if not Global.load_save:
 		Global.zen_current_level   = 1
@@ -459,6 +463,7 @@ func evaluate_selection():
 			if not c_result["valid"]:
 				combo_count = 1
 				_combo_x5_streak = 0
+				last_score_time = 0
 				update_combo_ui()
 				AudioManager.play_sfx("wrong")
 				_flash_wrong_tiles()
@@ -572,6 +577,10 @@ func evaluate_selection():
 				await get_tree().create_timer(0.5).timeout
 				check_end_game()
 	else:
+		combo_count = 1
+		_combo_x5_streak = 0
+		last_score_time = 0
+		update_combo_ui()
 		AudioManager.play_sfx("wrong")
 		_flash_wrong_tiles()
 		await get_tree().create_timer(0.3).timeout
@@ -582,7 +591,7 @@ func evaluate_selection():
 
 
 func _check_zen_milestone():
-	if gameplay_mode not in ["ZEN", "CHALLENGE"]: return
+	if gameplay_mode not in ["ZEN", "CHALLENGE", "MUTATION"]: return
 	var threshold = 50 if gameplay_mode == "CHALLENGE" else ZEN_REFILL_MILESTONE
 	var milestone = score / threshold
 	if milestone > zen_milestone_count:
@@ -793,7 +802,7 @@ func trigger_end_game(reason: String):
 		_lv_reached = gravity_level
 	elif gameplay_mode == "CHALLENGE":
 		_lv_reached = Global.zen_current_level
-	Global.submit_score(gameplay_mode, score, time_played, max_combo, _lv_reached)
+	Global.submit_score(gameplay_mode, score, time_played, max_combo, _lv_reached, _session_id)
 
 	# ── Achievement: Classic end-game ──
 	if gameplay_mode == "CLASSIC":
@@ -1166,8 +1175,10 @@ func _on_btn_quit_pressed():
 		trigger_end_game("LEFT")
 	else:
 		AudioManager.stop_bgm(1.0)
-		var _lv2 := Global.zen_current_level if gameplay_mode == "CHALLENGE" else 0
-		Global.submit_score(gameplay_mode, score, accumulated_time, max_combo, _lv2)
+		if score > _last_submitted_score:
+			var _lv2 := Global.zen_current_level if gameplay_mode == "CHALLENGE" else 0
+			Global.submit_score(gameplay_mode, score, accumulated_time, max_combo, _lv2, _session_id)
+			_last_submitted_score = score
 		_save_game_state()
 		Engine.time_scale = 1.0
 		get_tree().change_scene_to_file("res://main_menu.tscn")
@@ -1505,6 +1516,7 @@ func _reset_game():
 		overlay.queue_free()
 	is_tutorial_active = false
 
+	AudioManager.play_bgm(gameplay_mode, 0.5)
 	Global.delete_save(gameplay_mode)
 	score = 0
 	_display_score = 0
@@ -2720,6 +2732,8 @@ func _save_game_state():
 		"shuffle_count": shuffle_count,
 		"remove_count": remove_count,
 		"zen_milestone_count": zen_milestone_count,
+		"last_submitted_score": _last_submitted_score,
+		"session_id": _session_id,
 		"tiles": tile_list,
 	}
 	if gameplay_mode in ["ZEN", "CHALLENGE"]:
@@ -2737,7 +2751,9 @@ func _load_game_state():
 	hint_count          = int(data.get("hint_count", 1))
 	shuffle_count       = int(data.get("shuffle_count", 1))
 	remove_count        = int(data.get("remove_count", 1))
-	zen_milestone_count = int(data.get("zen_milestone_count", 0))
+	zen_milestone_count      = int(data.get("zen_milestone_count", 0))
+	_last_submitted_score    = int(data.get("last_submitted_score", 0))
+	_session_id              = str(data.get("session_id", str(int(Time.get_unix_time_from_system()))))
 	if gameplay_mode in ["ZEN", "CHALLENGE"]:
 		Global.zen_current_level   = int(data.get("current_level", 1))
 		var _raw_lv = data.get("unlocked_levels", [1])

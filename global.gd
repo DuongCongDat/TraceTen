@@ -153,17 +153,31 @@ func track_mode_played(mode: String):
 
 # ── HIGHSCORE ──────────────────────────────────────────────
 
-func submit_score(mode: String, score: int, time_played: float, max_combo: int, level_reached: int = 0):
+func submit_score(mode: String, score: int, time_played: float, max_combo: int, level_reached: int = 0, session_id: String = ""):
 	var data = load_highscore()
 	if not data.has(mode):
 		data[mode] = []
-
-	# Per-mode meta: games count + total score for avg
 	var mk := mode + "_meta"
 	if not data.has(mk):
 		data[mk] = {"games": 0, "total_score": 0}
-	data[mk]["games"]       = int(data[mk].get("games", 0))       + 1
-	data[mk]["total_score"] = int(data[mk].get("total_score", 0)) + score
+
+	# Find and remove any previous entry from the same session
+	var old_score := 0
+	var is_returning_session := false
+	if session_id != "":
+		for e in data[mode]:
+			if e.get("session_id", "") == session_id:
+				old_score = int(e.get("score", 0))
+				is_returning_session = true
+				break
+		if is_returning_session:
+			data[mode] = data[mode].filter(func(e): return e.get("session_id", "") != session_id)
+
+	# Update meta: games count only on first submission per session
+	if not is_returning_session:
+		data[mk]["games"] = int(data[mk].get("games", 0)) + 1
+	# Adjust total_score: swap old session score for new
+	data[mk]["total_score"] = int(data[mk].get("total_score", 0)) - old_score + score
 
 	# Short date string e.g. "Jun 2"
 	var d := Time.get_date_dict_from_system()
@@ -172,7 +186,7 @@ func submit_score(mode: String, score: int, time_played: float, max_combo: int, 
 	var date_str := "%s %d" % [MONTHS[int(d["month"])], int(d["day"])]
 
 	var entry = {"score": score, "time": time_played, "max_combo": max_combo,
-				 "date": date_str, "level": level_reached}
+				 "date": date_str, "level": level_reached, "session_id": session_id}
 	data[mode].append(entry)
 	# Sort: level modes by level desc then score desc, others by score desc
 	if mode == "GRAVITY":

@@ -27,8 +27,8 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 
 ## Game Modes
 
-- **Classic** — countdown 120s (Time's up), timer luôn chạy kể cả khi pause/alt-tab. Leave → show GameOver summary.
-- **Zen** — count-up, không giới hạn thời gian, timer dừng khi pause. Mỗi 100 điểm refill toàn bộ power-up (stackable).
+- **Classic** — countdown 120s (Time's up), timer luôn chạy kể cả khi pause/alt-tab. Leave → show GameOver summary. Khi hết nước mà còn giờ → `_classic_board_refill()` (xóa sạch + spawn lại, không báo người chơi).
+- **Zen** — count-up, không giới hạn thời gian, timer dừng khi pause. Mỗi 100 điểm refill toàn bộ power-up (stackable). Có level tracking 1–12 (theme màu biome, HUD tên level) nhưng **không áp constraint shape** — đó là Adventure.
 - **Gravity** — countdown 150s + 3 lives (mỗi shuffle tiêu 1 mạng). Mỗi ô ăn được +1s time bonus. 4 levels (mỗi 50 điểm): L1 DOWN → L2 RIGHT → L3 LEFT → L4 RANDOM (ngẫu nhiên UP/DOWN/LEFT/RIGHT sau mỗi nước). Timer dừng khi pause. Leave → show GameOver summary.
 - **Mutation** — ô đặc biệt, count-up, timer dừng khi pause.
 
@@ -104,10 +104,11 @@ TraceTen là trò chơi giải đố logic 2D tối giản trên Android. Ngư�
 **Trigger:** Hết nước đi (không còn vùng chữ nhật nào tổng = 10) **VÀ** hết power-up.
 
 **Áp dụng cho:**
-- ✅ Classic — thêm: Time's up; Leave → GameOver summary
-- ✅ Mutation — "No moves left"
-- ✅ Gravity — thêm: Time's up (150s); No lives (shuffle=0 sau khi dùng); Leave → GameOver summary
-- ❌ Zen — không áp dụng
+- ✅ Zen — NO_MOVES (hết nước + hết power-up)
+- ✅ Mutation — NO_MOVES (hết nước + hết power-up)
+- ⚠️ Classic — NO_MOVES chỉ ở edge case: hết nước đúng lúc đồng hồ = 0. Bình thường khi hết nước còn giờ → `_classic_board_refill()` (không gameover). Thực tế Classic chủ yếu chết bằng TIME_UP.
+- ❌ Gravity — không dùng NO_MOVES; chết bằng NO_LIVES (shuffle=0) hoặc TIME_UP
+- ❌ Adventure — không dùng NO_MOVES; có rescue: auto-shuffle 5 lần → nếu vẫn kẹt → `_spawn_challenge_board()` mới
 
 **Implementation:**
 - `scan_board_for_valid_moves()` — O(n⁴) với early-exit (reuse `find_hint_path()`). **KHÔNG gọi trong `_process()`.**
