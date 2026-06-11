@@ -1001,5 +1001,5 @@ DENSITY_THRESHOLD = 0.3
 ---
 
 *End of Report Context — TraceTen v0.7, last updated 2026-06-11*
-*Changelog: (1) Fix end game logic — NO_MOVES chỉ áp Zen+Mutation; Classic có board-refill fallback; Gravity dùng NO_LIVES; Adventure dùng rescue shuffle. (2) Highscore dedup — session_id chống duplicate từ cùng 1 save; last_submitted_score chặn submit khi điểm không tăng. (3) Zen level tracking không áp constraint shape — chỉ Adventure mới enforce.*
+*Changelog: (1) Fix end game logic — NO_MOVES chỉ áp Zen+Mutation; Classic có board-refill fallback; Gravity dùng NO_LIVES; Adventure dùng rescue shuffle. (2) Highscore dedup — session_id chống duplicate từ cùng 1 save; last_submitted_score chặn submit khi điểm không tăng. (3) Zen level tracking không áp constraint shape — chỉ Adventure mới enforce. (4) Thêm quy tắc cập nhật tài liệu vào CLAUDE.md — sync report_context khi CLAUDE.md đổi, log bắt buộc mỗi lần sửa.*
 *Đủ thông tin để viết báo cáo đồ án, vẽ Use Case / Class / Sequence / Activity Diagram, và thiết kế test cases.*

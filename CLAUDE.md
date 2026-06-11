@@ -767,3 +767,24 @@ const LEVELS = [
 - **Signals:** dùng signal cho giao tiếp giữa Node
 - **Global state:** chỉ dùng `global.gd` cho data thực sự xuyên scene
 - **Asset path:** đặt assets trong `res://assets/{ui,sfx,bgm,fonts}/`
+
+---
+
+## 📋 Quy tắc cập nhật tài liệu
+
+### Khi nào phải sửa `report_context.md`
+
+Bất cứ khi nào `CLAUDE.md` thay đổi thông tin về: cơ chế gameplay, kiến trúc hệ thống, cấu trúc dữ liệu save/highscore, flow end game, hoặc mode behavior → **phải cập nhật section tương ứng trong `report_context.md`**.
+
+Các section hay bị ảnh hưởng: §3 (class hierarchy), §4 (mode descriptions), §5 (flow diagrams), §10 (highscore & save format), §11 (Adventure level system).
+
+### Log bắt buộc
+
+Mỗi lần sửa `CLAUDE.md` hoặc `report_context.md`, **phải cập nhật dòng Changelog cuối `report_context.md`** theo format:
+
+```
+*End of Report Context — TraceTen v0.7, last updated YYYY-MM-DD*
+*Changelog: (1) mô tả thay đổi. (2) mô tả thay đổi. ...*
+```
+
+Không commit `CLAUDE.md` hoặc `report_context.md` mà không có log entry mới.
